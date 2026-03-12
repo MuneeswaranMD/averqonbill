@@ -1,0 +1,294 @@
+{
+    "name": "Averqon Bill - Telegram & Business Automation (Master)",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "averqon-events",
+                "options": {}
+            },
+            "id": "webhook-trigger",
+            "name": "App Event Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                -200,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "updates": [
+                    "message"
+                ],
+                "additionalFields": {}
+            },
+            "id": "telegram-trigger",
+            "name": "Telegram Bot Trigger",
+            "type": "n8n-nodes-base.telegramTrigger",
+            "typeVersion": 1,
+            "position": [
+                -200,
+                800
+            ]
+        },
+        {
+            "parameters": {
+                "dataType": "string",
+                "value1": "={{$node[\"App Event Webhook\"].json[\"event\"]}}",
+                "rules": {
+                    "rules": [
+                        {
+                            "value2": "order.created",
+                            "displayName": "New Order"
+                        },
+                        {
+                            "value2": "order.status_updated",
+                            "displayName": "Status Changed"
+                        },
+                        {
+                            "value2": "payment.received",
+                            "displayName": "Payment/Invoice"
+                        },
+                        {
+                            "value2": "dispatch.created",
+                            "displayName": "Shipping/Tracking"
+                        },
+                        {
+                            "value2": "stock.adjusted",
+                            "displayName": "Inventory Alert"
+                        },
+                        {
+                            "value2": "customer.created",
+                            "displayName": "New Customer"
+                        }
+                    ]
+                }
+            },
+            "id": "event-router",
+            "name": "Switch: Event Type",
+            "type": "n8n-nodes-base.switch",
+            "typeVersion": 1,
+            "position": [
+                50,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "chatId": "={{$node[\"App Event Webhook\"].json[\"data\"][\"customerPhone\"]}}",
+                "text": "=Hello {{$node[\"App Event Webhook\"].json[\"data\"][\"customerName\"]}},\n\nYour order has been created.\n\nProducts: {{$node[\"App Event Webhook\"].json[\"data\"][\"productName\"]}}\nTotal: ₹{{$node[\"App Event Webhook\"].json[\"data\"][\"totalAmount\"]}}\n\nReply:\nYES → Confirm Order\nNO → Cancel Order",
+                "additionalFields": {}
+            },
+            "id": "tg-order-msg",
+            "name": "1. Send Confirmation Request",
+            "type": "n8n-nodes-base.telegram",
+            "typeVersion": 1,
+            "position": [
+                300,
+                100
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "string": [
+                        {
+                            "value1": "={{$node[\"Telegram Bot Trigger\"].json[\"message\"][\"text\"]}}",
+                            "operation": "equal",
+                            "value2": "YES"
+                        }
+                    ]
+                }
+            },
+            "id": "check-reply",
+            "name": "2. Check Reply (YES/NO)",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [
+                50,
+                800
+            ]
+        },
+        {
+            "parameters": {
+                "chatId": "={{$node[\"App Event Webhook\"].json[\"data\"][\"customerPhone\"]}}",
+                "text": "=Thank you for confirming your order.\n\nPlease complete payment below:\nhttps://razorpay.me/sample-link",
+                "additionalFields": {}
+            },
+            "id": "tg-pay-link",
+            "name": "3. Send Payment Link",
+            "type": "n8n-nodes-base.telegram",
+            "typeVersion": 1,
+            "position": [
+                300,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "chatId": "={{$node[\"App Event Webhook\"].json[\"data\"][\"customerPhone\"]}}",
+                "text": "=Payment Received! Your Invoice INV-{{$node[\"App Event Webhook\"].json[\"data\"][\"id\"]}} is attached below.",
+                "additionalFields": {}
+            },
+            "id": "tg-invoice-msg",
+            "name": "4 & 5. Pay Confirm & Invoice",
+            "type": "n8n-nodes-base.telegram",
+            "typeVersion": 1,
+            "position": [
+                300,
+                450
+            ]
+        },
+        {
+            "parameters": {
+                "chatId": "={{$node[\"App Event Webhook\"].json[\"data\"][\"customerName\"]}}",
+                "text": "=Your order has been dispatched!\n\nCourier: {{$node[\"App Event Webhook\"].json[\"data\"][\"courierName\"]}}\nTracking: {{$node[\"App Event Webhook\"].json[\"data\"][\"trackingNumber\"]}}\n\nTrack here: {{$node[\"App Event Webhook\"].json[\"data\"][\"trackingUrl\"]}}",
+                "additionalFields": {}
+            },
+            "id": "tg-dispatch-msg",
+            "name": "6. Dispatch Tracking",
+            "type": "n8n-nodes-base.telegram",
+            "typeVersion": 1,
+            "position": [
+                300,
+                550
+            ]
+        },
+        {
+            "parameters": {
+                "chatId": "ADMIN_CHAT_ID",
+                "text": "=🚨 Low Stock Alert\n\nProduct: {{$node[\"App Event Webhook\"].json[\"data\"][\"productName\"]}}\nStock Remaining: {{$node[\"App Event Webhook\"].json[\"data\"][\"newStock\"]}}",
+                "additionalFields": {}
+            },
+            "id": "tg-stock-alert",
+            "name": "7. Admin Stock Alert",
+            "type": "n8n-nodes-base.telegram",
+            "typeVersion": 1,
+            "position": [
+                300,
+                650
+            ]
+        },
+        {
+            "parameters": {
+                "chatId": "ADMIN_CHAT_ID",
+                "text": "=👤 New Customer Added\n\nName: {{$node[\"App Event Webhook\"].json[\"data\"][\"name\"]}}\nPhone: {{$node[\"App Event Webhook\"].json[\"data\"][\"phone\"]}}",
+                "additionalFields": {}
+            },
+            "id": "tg-cust-alert",
+            "name": "8. New Customer Alert",
+            "type": "n8n-nodes-base.telegram",
+            "typeVersion": 1,
+            "position": [
+                300,
+                750
+            ]
+        },
+        {
+            "parameters": {
+                "triggerTimes": {
+                    "item": [
+                        {
+                            "mode": "everyDay",
+                            "hour": 21
+                        }
+                    ]
+                }
+            },
+            "id": "cron-daily",
+            "name": "7. Daily Sales (9 PM)",
+            "type": "n8n-nodes-base.cron",
+            "typeVersion": 1,
+            "position": [
+                -200,
+                1000
+            ]
+        },
+        {
+            "parameters": {
+                "chatId": "ADMIN_CHAT_ID",
+                "text": "=Daily Sales Report\n\nRevenue: ₹{{ $json[\"revenue\"] }}\nOrders: {{ $json[\"count\"] }}",
+                "additionalFields": {}
+            },
+            "id": "tg-daily-report",
+            "name": "Send Daily Report",
+            "type": "n8n-nodes-base.telegram",
+            "typeVersion": 1,
+            "position": [
+                50,
+                1000
+            ]
+        }
+    ],
+    "connections": {
+        "App Event Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Switch: Event Type",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Switch: Event Type": {
+            "main": [
+                [
+                    {
+                        "node": "tg-order-msg",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "tg-pay-link",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "tg-invoice-msg",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "tg-dispatch-msg",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "tg-stock-alert",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "tg-cust-alert",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Telegram Bot Trigger": {
+            "main": [
+                [
+                    {
+                        "node": "2. Check Reply (YES/NO)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

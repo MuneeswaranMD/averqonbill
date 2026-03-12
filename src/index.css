@@ -1,0 +1,123 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background-color: #F8FAFC;
+    color: #0F172A;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #0F172A;
+  }
+
+  h2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1E293B;
+  }
+
+  h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1E293B;
+  }
+
+  table {
+    font-size: 14px;
+    color: #374151;
+    width: 100%;
+  }
+
+  th {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6B7280;
+    background-color: #F9FAFB;
+    letter-spacing: 0.02em;
+  }
+
+  td {
+    font-size: 14px;
+  }
+
+  /* Minimal scrollbar */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #E2E8F0;
+    border-radius: 99px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #CBD5E1;
+  }
+}
+
+@layer components {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Stat card */
+  .stat-card {
+    @apply bg-white rounded-xl border border-gray-200 p-5;
+  }
+
+  /* Table container */
+  .table-container {
+    @apply bg-white rounded-xl border border-gray-200 overflow-hidden;
+  }
+
+  /* Page section header */
+  .section-header {
+    @apply flex items-center justify-between mb-5;
+  }
+}
+
+/* Page entrance animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-in {
+  animation: fadeIn 0.25s ease-out forwards;
+}
+
+/* Inline number font for IDs / amounts */
+.font-mono-data {
+  font-family: "Roboto Mono", monospace;
+  font-size: 13px;
+}

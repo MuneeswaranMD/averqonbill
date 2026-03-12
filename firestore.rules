@@ -1,0 +1,132 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helpers ──────────────────────────────────────────────
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isSuperAdmin() {
+      return signedIn() && (
+        request.auth.token.email == 'muneeswaran@averqon.in' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && userDoc().role == 'super_admin')
+      );
+    }
+
+    function myCompany() {
+      return userDoc().companyId;
+    }
+
+    // Comprehensive check for company-level data access
+    function canAccessCompany(companyId) {
+      return signedIn() && (isSuperAdmin() || myCompany() == companyId);
+    }
+
+    // ── Users ─────────────────────────────────────────────────
+    match /users/{userId} {
+      allow read:   if signedIn();
+      allow write:  if signedIn() && (request.auth.uid == userId || isSuperAdmin());
+    }
+
+    // ── Companies ─────────────────────────────────────────────
+    match /companies/{companyId} {
+      allow get:    if true; // Public portal needs this
+      allow list:   if signedIn() && isSuperAdmin();
+      allow create: if signedIn();
+      allow update, delete: if canAccessCompany(companyId);
+    }
+
+    // ── Public Accessible Collections ─────────────────────────
+    match /staff/{docId} {
+      allow list, get: if true;
+      allow write: if signedIn() && (isSuperAdmin() || (request.resource.data.companyId == myCompany()));
+      allow delete: if signedIn() && (isSuperAdmin() || (resource.data.companyId == myCompany()));
+    }
+
+    match /services/{docId} {
+      allow list, get: if true;
+      allow write: if signedIn() && (isSuperAdmin() || (request.resource.data.companyId == myCompany()));
+      allow delete: if signedIn() && (isSuperAdmin() || (resource.data.companyId == myCompany()));
+    }
+
+    match /bookings/{docId} {
+      allow create, get: if true; // Public create booking
+      allow list, update, delete: if canAccessCompany(resource.data.companyId);
+    }
+
+    // ── Private Business Collections ───────────────────────────
+    // These require strict company-level isolation for both read and write
+    
+    match /products/{docId} {
+      allow read: if canAccessCompany(resource.data.companyId);
+      allow create: if canAccessCompany(request.resource.data.companyId);
+      allow update, delete: if canAccessCompany(resource.data.companyId);
+    }
+
+    match /customers/{docId} {
+      allow read: if canAccessCompany(resource.data.companyId);
+      allow create: if canAccessCompany(request.resource.data.companyId);
+      allow update, delete: if canAccessCompany(resource.data.companyId);
+    }
+
+    match /orders/{docId} {
+      allow read: if canAccessCompany(resource.data.companyId);
+      allow create: if canAccessCompany(request.resource.data.companyId);
+      allow update, delete: if canAccessCompany(resource.data.companyId);
+    }
+
+    match /estimates/{docId} {
+      allow read: if canAccessCompany(resource.data.companyId);
+      allow create: if canAccessCompany(request.resource.data.companyId);
+      allow update, delete: if canAccessCompany(resource.data.companyId);
+    }
+
+    match /invoices/{docId} {
+      allow read: if canAccessCompany(resource.data.companyId);
+      allow create: if canAccessCompany(request.resource.data.companyId);
+      allow update, delete: if canAccessCompany(resource.data.companyId);
+    }
+
+    match /dispatches/{docId} {
+      allow read: if canAccessCompany(resource.data.companyId);
+      allow create: if canAccessCompany(request.resource.data.companyId);
+      allow update, delete: if canAccessCompany(resource.data.companyId);
+    }
+
+    match /stock_logs/{logId} {
+      allow read: if canAccessCompany(resource.data.companyId);
+      allow create: if canAccessCompany(request.resource.data.companyId);
+      allow update, delete: if false;
+    }
+
+    match /suppliers/{docId} {
+      allow read: if canAccessCompany(resource.data.companyId);
+      allow create: if canAccessCompany(request.resource.data.companyId);
+      allow update, delete: if canAccessCompany(resource.data.companyId);
+    }
+
+    match /automations/{docId} {
+      allow read, write: if signedIn() && (isSuperAdmin() || docId == myCompany());
+    }
+
+    match /notifications/{docId} {
+      allow read: if signedIn() && (
+        isSuperAdmin() || 
+        resource.data.userId == request.auth.uid || 
+        canAccessCompany(resource.data.companyId)
+      );
+      allow create: if signedIn() && (
+        isSuperAdmin() || 
+        request.resource.data.role == 'system' || 
+        canAccessCompany(request.resource.data.companyId)
+      );
+      allow update, delete: if canAccessCompany(resource.data.companyId);
+    }
+  }
+}
