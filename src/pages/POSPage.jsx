@@ -303,10 +303,15 @@ export default function POSPage() {
                                                 : 'border-gray-200 hover:border-blue-200 hover:shadow-md hover:shadow-blue-50 cursor-pointer'
                                             }`}
                                     >
-                                        {/* Product emoji / icon area */}
-                                        <div className="h-16 flex items-center justify-center text-3xl mb-2 bg-gray-50 rounded-lg group-hover:bg-blue-50 transition-colors">
-                                            {product.image || '📦'}
+                                        {/* Product Image area */}
+                                        <div className="h-20 w-full flex items-center justify-center mb-2 bg-gray-50 rounded-lg group-hover:bg-blue-50 transition-colors overflow-hidden border border-gray-100/50">
+                                            {product.image ? (
+                                                <img src={product.image} alt={product.name} className="h-full w-full object-cover transition-transform group-hover:scale-110" />
+                                            ) : (
+                                                <Package size={24} className="text-gray-300" />
+                                            )}
                                         </div>
+
 
                                         {/* Name */}
                                         <p className="text-xs font-semibold text-gray-800 leading-tight line-clamp-2 mb-1">{product.name}</p>
@@ -380,9 +385,14 @@ export default function POSPage() {
                         </div>
                     ) : cart.map(item => (
                         <div key={item.id} className="flex items-center gap-2 bg-gray-50 rounded-xl p-2.5 group">
-                            <div className="h-9 w-9 bg-white rounded-lg flex items-center justify-center text-lg flex-shrink-0 border border-gray-100">
-                                {item.image || '📦'}
+                            <div className="h-9 w-9 bg-white rounded-lg flex items-center justify-center flex-shrink-0 border border-gray-100 overflow-hidden">
+                                {item.image ? (
+                                    <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
+                                ) : (
+                                    <Package size={14} className="text-gray-300" />
+                                )}
                             </div>
+
                             <div className="flex-1 min-w-0">
                                 <p className="text-xs font-semibold text-gray-800 truncate">{item.name}</p>
                                 <p className="text-xs text-blue-600 font-bold">₹{fmt(Number(item.price) * item.qty)}</p>

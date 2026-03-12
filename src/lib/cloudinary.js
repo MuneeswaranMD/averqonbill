@@ -4,7 +4,8 @@
  * Handles image uploads to Cloudinary using unsigned presets.
  */
 
-const CLOUDINARY_CLOUD_NAME = 'dky2e4lpk'; // Placeholder: User should replace with their cloud name if different
+const CLOUDINARY_CLOUD_NAME = 'dxlmlhpfy';
+
 const UPLOAD_PRESET = 'ml_default';
 
 /**
@@ -18,13 +19,9 @@ export const uploadImage = async (file) => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('upload_preset', UPLOAD_PRESET);
-    
-    // Cloudinary specific configs from user
-    formData.append('overwrite', 'false');
-    formData.append('use_filename', 'true');
-    formData.append('unique_filename', 'true');
 
     try {
+
         const response = await fetch(
             `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
             {

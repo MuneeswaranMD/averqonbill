@@ -13,6 +13,9 @@ const EMPTY_FORM = { name: '', sku: '', category: '', price: '', stock: '', desc
 function ProductModal({ open, onClose, onSave, initial }) {
     const [form, setForm] = useState(EMPTY_FORM);
     const [uploading, setUploading] = useState(false);
+    const [saving, setSaving] = useState(false);
+
+
 
     useEffect(() => {
         setForm(initial ? { ...EMPTY_FORM, ...initial } : EMPTY_FORM);
