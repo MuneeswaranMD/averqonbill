@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, addDays, isSameDay } from 'date-fns';
+import { Badge } from '../components/ui';
+
 
 export default function PublicBookingPage() {
     const { companyId } = useParams();
