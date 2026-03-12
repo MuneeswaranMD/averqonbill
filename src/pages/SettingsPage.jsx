@@ -14,6 +14,9 @@ import {
     doc, onSnapshot, updateDoc, serverTimestamp,
     collection, query, where, addDoc, deleteDoc
 } from 'firebase/firestore';
+import { uploadImage } from '../lib/cloudinary';
+import { ImagePlus, Camera, Upload } from 'lucide-react';
+
 
 /* ─── Tab config ─────────────────────────────────────────── */
 const TABS = [
@@ -144,7 +147,9 @@ export default function SettingsPage() {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('business');
     const [saving, setSaving] = useState(false);
+    const [uploadingLogo, setUploadingLogo] = useState(false);
     const [toast, setToast] = useState(null);
+
 
     const showToast = (msg, type = 'success') => {
         setToast({ msg, type });
@@ -196,6 +201,22 @@ export default function SettingsPage() {
         return () => unsubscribe();
     }, [companyId]);
 
+    const handleLogoUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setUploadingLogo(true);
+        try {
+            const url = await uploadImage(file);
+            set('logoUrl', url);
+            showToast('Logo uploaded successfully');
+        } catch (err) {
+            showToast('Logo upload failed: ' + err.message, 'error');
+        } finally {
+            setUploadingLogo(false);
+        }
+    };
+
     const handleSave = async () => {
         if (!companyId || companyId === 'platform') return;
         setSaving(true);
@@ -209,6 +230,7 @@ export default function SettingsPage() {
             setSaving(false);
         }
     };
+
 
     /* ─── Team management state ───────────────────────── */
     const [team, setTeam] = useState([]);
@@ -324,29 +346,54 @@ export default function SettingsPage() {
                             <SectionHeader icon={Building2} color="bg-blue-50 text-blue-600"
                                 title="Business Profile" desc="Company details printed on all documents" />
                             <div className="p-6 space-y-5">
-                                {/* Logo */}
-                                <div className="flex items-center gap-5 pb-5 border-b border-gray-100">
-                                    <div className="h-20 w-20 rounded-2xl bg-gray-100 border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 overflow-hidden relative group">
-                                        {settings.logoUrl ? (
-                                            <img src={settings.logoUrl} alt="Logo" className="w-full h-full object-cover" />
-                                        ) : (
-                                            <>
-                                                <Building2 size={22} className="mb-1" />
-                                                <span className="text-[9px] font-bold uppercase tracking-wider">Logo</span>
-                                            </>
+                                {/* Logo Section */}
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 pb-6 border-b border-gray-100">
+                                    <div className="relative group">
+                                        <div className="h-24 w-24 rounded-2xl bg-gray-50 border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 overflow-hidden relative shadow-sm transition-all group-hover:border-blue-300">
+                                            {settings.logoUrl ? (
+                                                <img src={settings.logoUrl} alt="Logo" className="w-full h-full object-contain p-2" />
+                                            ) : (
+                                                <>
+                                                    <Building2 size={24} className="mb-1 opacity-20" />
+                                                    <span className="text-[9px] font-bold uppercase tracking-wider opacity-40 text-center px-2">No Logo</span>
+                                                </>
+                                            )}
+                                            {uploadingLogo && (
+                                                <div className="absolute inset-0 bg-white/80 flex items-center justify-center backdrop-blur-[1px]">
+                                                    <RefreshCw size={18} className="text-blue-600 animate-spin" />
+                                                </div>
+                                            )}
+                                        </div>
+                                        <label className="absolute -bottom-2 -right-2 h-9 w-9 bg-blue-600 text-white rounded-xl flex items-center justify-center cursor-pointer shadow-lg hover:bg-blue-700 transition-all border-2 border-white group-hover:scale-110 active:scale-95">
+                                            <Camera size={16} />
+                                            <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} disabled={uploadingLogo} />
+                                        </label>
+                                        {settings.logoUrl && !uploadingLogo && (
+                                            <button
+                                                type="button"
+                                                onClick={() => set('logoUrl', '')}
+                                                className="absolute -top-2 -right-2 h-7 w-7 bg-white text-gray-400 rounded-full flex items-center justify-center shadow-md hover:text-red-500 hover:shadow-lg transition-all border border-gray-100"
+                                            >
+                                                <X size={14} />
+                                            </button>
                                         )}
                                     </div>
-                                    <div className="flex-1">
-                                        <p className="text-sm font-bold text-gray-900">Company Logo</p>
-                                        <p className="text-xs text-gray-500 mb-2">Provide a public URL for your company logo</p>
-                                        <InputField
-                                            label="Logo URL"
-                                            value={settings.logoUrl}
-                                            onChange={v => set('logoUrl', v)}
-                                            placeholder="https://example.com/logo.png"
-                                        />
+                                    <div className="flex-1 space-y-1">
+                                        <h3 className="text-base font-bold text-gray-900">Company Logo</h3>
+                                        <p className="text-xs text-gray-500 max-w-sm">This logo will appear on your public booking page, quotes, and invoices. Recommended: Square (512x512px) Transparent PNG.</p>
+                                        {settings.logoUrl && (
+                                            <div className="flex items-center gap-2 mt-3 p-2.5 bg-gray-50 rounded-xl border border-gray-100 max-w-sm">
+                                                <Globe size={12} className="text-gray-400" />
+                                                <span className="text-[10px] font-mono text-gray-400 truncate">{settings.logoUrl}</span>
+                                                <button onClick={() => { navigator.clipboard.writeText(settings.logoUrl); showToast('Link copied'); }}
+                                                    className="p-1 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors">
+                                                    <Copy size={12} />
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
+
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <InputField label="Company Legal Name" value={settings.name}

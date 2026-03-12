@@ -3,12 +3,16 @@ import { Plus, Search, Edit2, Trash2, Package, AlertCircle, X, Layers, RefreshCw
 import { FirestoreService } from '../lib/firestore';
 import { useAuth } from '../contexts/AuthContext';
 import { Badge, Button } from '../components/ui';
+import { uploadImage } from '../lib/cloudinary';
+import { ImagePlus, Camera } from 'lucide-react';
 
-const EMPTY_FORM = { name: '', sku: '', category: '', price: '', stock: '', description: '' };
+
+const EMPTY_FORM = { name: '', sku: '', category: '', price: '', stock: '', description: '', image: '' };
+
 
 function ProductModal({ open, onClose, onSave, initial }) {
     const [form, setForm] = useState(EMPTY_FORM);
-    const [saving, setSaving] = useState(false);
+    const [uploading, setUploading] = useState(false);
 
     useEffect(() => {
         setForm(initial ? { ...EMPTY_FORM, ...initial } : EMPTY_FORM);
@@ -16,12 +20,28 @@ function ProductModal({ open, onClose, onSave, initial }) {
 
     if (!open) return null;
 
+    const handleFileChange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setUploading(true);
+        try {
+            const url = await uploadImage(file);
+            setForm(prev => ({ ...prev, image: url }));
+        } catch (err) {
+            alert('Upload failed: ' + err.message);
+        } finally {
+            setUploading(false);
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSaving(true);
         await onSave({ ...form, price: Number(form.price), stock: Number(form.stock) });
         setSaving(false);
     };
+
 
     const field = (label, key, type = 'text', required = true, placeholder = '') => (
         <div>
@@ -47,7 +67,36 @@ function ProductModal({ open, onClose, onSave, initial }) {
                     </button>
                 </div>
                 <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                    <div className="flex justify-center mb-6">
+                        <div className="relative group">
+                            <div className="h-24 w-24 rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 overflow-hidden flex items-center justify-center relative">
+                                {form.image ? (
+                                    <img src={form.image} alt="Preview" className="h-full w-full object-cover" />
+                                ) : (
+                                    <div className="text-center">
+                                        <Camera size={24} className="text-gray-300 mx-auto" />
+                                        <p className="text-[10px] text-gray-400 font-bold uppercase mt-1">Add Image</p>
+                                    </div>
+                                )}
+                                {uploading && (
+                                    <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
+                                        <RefreshCw size={16} className="text-blue-600 animate-spin" />
+                                    </div>
+                                )}
+                            </div>
+                            <label className="absolute -bottom-2 -right-2 h-8 w-8 bg-blue-600 text-white rounded-full flex items-center justify-center cursor-pointer shadow-lg hover:bg-blue-700 transition-all border-2 border-white">
+                                <ImagePlus size={14} />
+                                <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} disabled={uploading} />
+                            </label>
+                            {form.image && !uploading && (
+                                <button type="button" onClick={() => setForm(p => ({ ...p, image: '' }))} className="absolute -top-2 -right-2 h-6 w-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 border-2 border-white">
+                                    <X size={12} />
+                                </button>
+                            )}
+                        </div>
+                    </div>
                     {field('Product Name', 'name', 'text', true, 'e.g. Rocket Crackers')}
+
                     <div className="grid grid-cols-2 gap-4">
                         {field('SKU', 'sku', 'text', false, 'e.g. SKU-001')}
                         {field('Category', 'category', 'text', true, 'e.g. Crackers')}
@@ -272,9 +321,14 @@ export default function ProductsPage() {
                                     <tr key={p.id} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-5 py-3.5">
                                             <div className="flex items-center gap-3">
-                                                <div className="h-8 w-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
-                                                    <Package size={14} />
+                                                <div className="h-10 w-10 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                                                    {p.image ? (
+                                                        <img src={p.image} alt={p.name} className="h-full w-full object-cover" />
+                                                    ) : (
+                                                        <Package size={16} className="text-gray-300" />
+                                                    )}
                                                 </div>
+
                                                 <div>
                                                     <p className="text-sm font-medium text-gray-900">{p.name}</p>
                                                     <p className="text-xs text-gray-400 font-mono">#{p.id.slice(-6)}</p>
