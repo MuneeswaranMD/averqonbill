@@ -44,8 +44,8 @@ const PAYMENT_STYLE = {
 };
 
 const EMPTY_ORDER = {
-    customerName: '', customerPhone: '', productName: '',
-    quantity: '', totalAmount: '', status: 'Pending',
+    customerName: '', customerPhone: '', items: [{ name: '', qty: 1, price: 0, total: 0 }],
+    totalAmount: 0, status: 'Pending',
     payment: 'Unpaid', notes: '', date: new Date().toISOString().slice(0, 10),
 };
 
@@ -54,112 +54,167 @@ function OrderModal({ open, onClose, onSave, initial, products = [] }) {
     const [form, setForm] = useState(EMPTY_ORDER);
     const [saving, setSaving] = useState(false);
 
-    useEffect(() => { setForm(initial ? { ...EMPTY_ORDER, ...initial } : EMPTY_ORDER); }, [initial, open]);
+    useEffect(() => {
+        if (initial) {
+            // Normalize items for editing
+            const normalizedItems = initial.items && initial.items.length > 0
+                ? initial.items.map(i => ({
+                    name: i.name || i.productName || '',
+                    qty: i.qty || i.quantity || 1,
+                    price: i.price || (i.total / (i.qty || 1)) || 0,
+                    total: i.total || 0
+                }))
+                : [{
+                    name: initial.productName || '',
+                    qty: initial.quantity || 1,
+                    price: (initial.totalAmount / (initial.quantity || 1)) || 0,
+                    total: initial.totalAmount || 0
+                }];
+
+            setForm({ ...EMPTY_ORDER, ...initial, items: normalizedItems });
+        } else {
+            setForm(EMPTY_ORDER);
+        }
+    }, [initial, open]);
+
     if (!open) return null;
 
-    const set = (k) => (e) => {
-        const val = e.target.value;
-        setForm(f => {
-            const next = { ...f, [k]: val };
-
-            // Auto-fetch price if product name matches
-            if (k === 'productName') {
-                const found = products.find(p => p.name === val);
-                if (found) {
-                    next.totalAmount = (Number(found.price) * (Number(next.quantity) || 1)).toString();
-                }
-            }
-
-            // Recalculate total if quantity changes and we have a price baseline
-            if (k === 'quantity') {
-                const found = products.find(p => p.name === next.productName);
-                if (found) {
-                    next.totalAmount = (Number(found.price) * (Number(val) || 1)).toString();
-                } else if (f.totalAmount && f.quantity) {
-                    const unitPrice = Number(f.totalAmount) / Number(f.quantity);
-                    next.totalAmount = (unitPrice * (Number(val) || 1)).toString();
-                }
-            }
-
-            return next;
-        });
+    const calculateTotals = (items) => {
+        return items.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
     };
 
-    const field = (label, key, type = 'text', req = true, ph = '') => (
-        <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1">
-                {label}{req && <span className="text-red-400 ml-0.5">*</span>}
-            </label>
-            <input type={type} value={form[key]} onChange={set(key)} required={req} placeholder={ph}
-                list={key === 'productName' ? 'product-list' : undefined}
-                className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400" />
-            {key === 'productName' && (
-                <datalist id="product-list">
-                    {products.map(p => (
-                        <option key={p.id} value={p.name}>{`₹${p.price} - SKU: ${p.sku || 'N/A'}`}</option>
-                    ))}
-                </datalist>
-            )}
-        </div>
-    );
+    const updateItem = (index, field, value) => {
+        const newItems = [...form.items];
+        const item = { ...newItems[index], [field]: value };
+
+        if (field === 'name') {
+            const found = products.find(p => p.name === value);
+            if (found) {
+                item.price = found.price;
+                item.total = Number(found.price) * (Number(item.qty) || 1);
+            }
+        }
+
+        if (field === 'qty' || field === 'price') {
+            item.total = (Number(item.qty) || 0) * (Number(item.price) || 0);
+        }
+
+        newItems[index] = item;
+        setForm(f => ({ ...f, items: newItems, totalAmount: calculateTotals(newItems) }));
+    };
+
+    const addItem = () => {
+        const newItems = [...form.items, { name: '', qty: 1, price: 0, total: 0 }];
+        setForm(f => ({ ...f, items: newItems }));
+    };
+
+    const removeItem = (index) => {
+        if (form.items.length <= 1) return;
+        const newItems = form.items.filter((_, i) => i !== index);
+        setForm(f => ({ ...f, items: newItems, totalAmount: calculateTotals(newItems) }));
+    };
 
     const handleSubmit = async (e) => {
-        e.preventDefault(); setSaving(true);
-        await onSave({ ...form, totalAmount: Number(form.totalAmount), quantity: Number(form.quantity) });
+        e.preventDefault();
+        setSaving(true);
+        const summaryName = form.items.length > 1 ? `${form.items[0].name} +${form.items.length - 1} more` : form.items[0]?.name || '';
+        await onSave({ ...form, productName: summaryName, totalAmount: Number(form.totalAmount) });
         setSaving(false);
     };
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
                     <h2 className="text-base font-semibold text-gray-900">
-                        {initial?.id ? 'Edit Order' : 'Order Form'}
+                        {initial?.id ? 'Edit Order' : 'New Order'}
                     </h2>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100"><X size={18} /></button>
                 </div>
-                <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                        {field('Customer Name', 'customerName', 'text', true, 'e.g. Ravi Traders')}
-                        {field('Customer Phone', 'customerPhone', 'tel', false, '+91 98765 43210')}
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        {field('Product / Description', 'productName', 'text', true, 'Search or type product...')}
-                        {field('Quantity', 'quantity', 'number', false, '1')}
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        {field('Total Amount (₹)', 'totalAmount', 'number', true, '0')}
-                        {field('Order Date', 'date', 'date', false)}
-                    </div>
+
+                <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6">
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-xs font-semibold text-gray-500 mb-1">Order Status</label>
-                            <select value={form.status} onChange={set('status')}
-                                className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400">
+                            <label className="block text-xs font-semibold text-gray-500 mb-1">Customer Name *</label>
+                            <input type="text" value={form.customerName} onChange={e => setForm(f => ({ ...f, customerName: e.target.value }))} required placeholder="Client Name"
+                                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400" />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-500 mb-1">Phone</label>
+                            <input type="tel" value={form.customerPhone} onChange={e => setForm(f => ({ ...f, customerPhone: e.target.value }))} placeholder="+91 ..."
+                                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400" />
+                        </div>
+                    </div>
+
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Order Items</h3>
+                            <button type="button" onClick={addItem} className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
+                                <Plus size={12} /> Add Item
+                            </button>
+                        </div>
+
+                        <div className="space-y-2">
+                            {form.items.map((item, idx) => (
+                                <div key={idx} className="flex gap-2 items-start bg-gray-50/50 p-2 rounded-xl border border-gray-100">
+                                    <div className="flex-1">
+                                        <input type="text" value={item.name} onChange={e => updateItem(idx, 'name', e.target.value)} required placeholder="Product Name" list="order-products"
+                                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/10 bg-white" />
+                                    </div>
+                                    <div className="w-20">
+                                        <input type="number" value={item.qty} onChange={e => updateItem(idx, 'qty', e.target.value)} required placeholder="Qty"
+                                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/10 bg-white" />
+                                    </div>
+                                    <div className="w-28">
+                                        <input type="number" value={item.price} onChange={e => updateItem(idx, 'price', e.target.value)} required placeholder="Price"
+                                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/10 bg-white" />
+                                    </div>
+                                    <div className="w-20 pt-2 text-right">
+                                        <p className="text-sm font-semibold text-gray-900">₹{item.total}</p>
+                                    </div>
+                                    {form.items.length > 1 && (
+                                        <button type="button" onClick={() => removeItem(idx)} className="p-2 text-gray-400 hover:text-red-500 transition-colors">
+                                            <Trash2 size={16} />
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-500 mb-1">Status</label>
+                            <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
+                                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/10">
                                 {ORDER_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
                             </select>
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-gray-500 mb-1">Payment Status</label>
-                            <select value={form.payment} onChange={set('payment')}
-                                className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400">
+                            <label className="block text-xs font-semibold text-gray-500 mb-1">Payment</label>
+                            <select value={form.payment} onChange={e => setForm(f => ({ ...f, payment: e.target.value }))}
+                                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/10">
                                 {PAYMENT_STATUSES.map(p => <option key={p} value={p}>{p}</option>)}
                             </select>
                         </div>
                     </div>
-                    <div>
-                        <label className="block text-xs font-semibold text-gray-500 mb-1">Notes</label>
-                        <textarea value={form.notes} onChange={set('notes')} rows={2} placeholder="Optional notes..."
-                            className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 resize-none" />
+
+                    <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
+                        <div className="text-left">
+                            <p className="text-xs text-gray-400 uppercase font-bold">Total Amount</p>
+                            <p className="text-xl font-bold text-blue-600">₹{(form.totalAmount || 0).toLocaleString()}</p>
+                        </div>
+                        <div className="flex gap-2">
+                            <button type="button" onClick={onClose} className="px-6 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50">Cancel</button>
+                            <button type="submit" disabled={saving} className="px-8 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-60 shadow-lg shadow-blue-500/20">
+                                {saving ? 'Saving...' : 'Save Order'}
+                            </button>
+                        </div>
                     </div>
-                    <div className="flex gap-2 pt-1">
-                        <button type="button" onClick={onClose}
-                            className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50">Cancel</button>
-                        <button type="submit" disabled={saving}
-                            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-60">
-                            {saving ? 'Saving...' : (initial?.id ? 'Update Order' : 'Create Order')}
-                        </button>
-                    </div>
+
+                    <datalist id="order-products">
+                        {products.map(p => <option key={p.id} value={p.name}>{`₹${p.price} - ${p.sku || ''}`}</option>)}
+                    </datalist>
                 </form>
             </div>
         </div>
