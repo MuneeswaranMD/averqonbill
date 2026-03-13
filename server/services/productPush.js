@@ -12,7 +12,7 @@ export async function pushProductToPlatform(companyId, productId, updateData) {
         const integration = await Integration.findOne({ 
             companyId, 
             platform: product.platform,
-            status: 'active'
+            status: 'connected'
         });
 
         if (!integration) {
@@ -33,11 +33,13 @@ export async function pushProductToPlatform(companyId, productId, updateData) {
 }
 
 async function pushToShopify(integration, externalId, data) {
-    const { shopUrl, accessToken } = integration.config;
+    const { storeUrl, accessToken } = integration.credentials;
+    const cleanUrl = storeUrl.startsWith('http') ? storeUrl : `https://${storeUrl}`;
+    
     // Shopify stores ID as gid://shopify/Product/12345 or just 12345
     const id = externalId.includes('/') ? externalId.split('/').pop() : externalId;
     
-    const url = `https://${shopUrl}/admin/api/2024-01/products/${id}.json`;
+    const url = `${cleanUrl.replace(/\/$/, '')}/admin/api/2024-01/products/${id}.json`;
     const payload = {
         product: {
             id: id,
@@ -65,8 +67,9 @@ async function pushToShopify(integration, externalId, data) {
 }
 
 async function pushToWooCommerce(integration, externalId, data) {
-    const { storeUrl, consumerKey, consumerSecret } = integration.config;
-    const url = `${storeUrl.replace(/\/$/, '')}/wp-json/wc/v3/products/${externalId}`;
+    const { storeUrl, consumerKey, consumerSecret } = integration.credentials;
+    const cleanUrl = storeUrl.startsWith('http') ? storeUrl : `https://${storeUrl}`;
+    const url = `${cleanUrl.replace(/\/$/, '')}/wp-json/wc/v3/products/${externalId}`;
     
     const payload = {
         name: data.name,
