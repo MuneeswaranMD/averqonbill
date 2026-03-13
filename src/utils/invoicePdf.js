@@ -20,14 +20,14 @@ export const generateInvoicePDF = (order, customer, templateId = 'classic') => {
     };
 
     const data = {
-        invoiceNo: order.invoiceNumber || `INV-${String(order.id).slice(-6).toUpperCase()}`,
-        date: new Date(order.invoiceDate || order.createdAt?.seconds * 1000 || order.date || Date.now()).toLocaleDateString(),
+        invoiceNo: order.invoiceNumber || order.orderNumber || `INV-${String(order.id || '').slice(-6).toUpperCase()}`,
+        date: new Date(order.invoiceDate || order.date || order.createdAt?.seconds * 1000 || order.createdAt || Date.now()).toLocaleDateString(),
         dueDate: order.dueDate || 'N/A',
         customer: {
             name: customer.name || order.customerName || order.customer?.name || 'N/A',
             address: customer.address || order.customerAddress || 
                      (order.customer?.billingAddress ? 
-                        `${order.customer.billingAddress.address1}, ${order.customer.billingAddress.city}, ${order.customer.billingAddress.country}` : 
+                        `${order.customer.billingAddress.address1}, ${order.customer.billingAddress.city}${order.customer.billingAddress.country ? ', ' + order.customer.billingAddress.country : ''}` : 
                         'N/A'),
             phone: customer.phone || order.customerPhone || order.customer?.phone || 'N/A',
             email: customer.email || order.customerEmail || order.customer?.email || '',
@@ -39,12 +39,17 @@ export const generateInvoicePDF = (order, customer, templateId = 'classic') => {
             gstin: order.companyGSTIN || '33AAAAA0000A1Z5',
             logoUrl: order.logoUrl || null,
         },
-        items: order.items || order.products || [],
-        subtotal: order.pricing?.subtotal || order.subtotal || order.totalAmount,
-        tax: order.pricing?.totalTax || order.tax || 0,
-        discount: order.pricing?.totalDiscounts || order.discount || 0,
-        shipping: order.pricing?.shippingTotal || 0,
-        total: order.totalAmount || order.amount || 0,
+        items: (order.items || order.products || []).map(item => ({
+            name: item.name || item.productName || 'Item',
+            price: Number(item.price || 0),
+            qty: Number(item.qty || item.quantity || 1),
+            total: Number(item.total || (Number(item.price || 0) * Number(item.qty || item.quantity || 1)) || 0)
+        })),
+        subtotal: Number(order.pricing?.subtotal || order.subtotal || order.totalAmount || 0),
+        tax: Number(order.pricing?.totalTax || order.tax || 0),
+        discount: Number(order.pricing?.totalDiscounts || order.discount || 0),
+        shipping: Number(order.pricing?.shippingTotal || 0),
+        total: Number(order.totalAmount || order.amount || order.pricing?.total || 0),
         footer: order.footerNote || 'Thank you for your business!',
         currency: (order.currencySymbol || order.currency || 'Rs.').replace('₹', 'Rs.').replace('\u20B9', 'Rs.'),
     };
@@ -189,20 +194,21 @@ function renderEditorial(doc, data, colors) {
         doc.text(value, RIGHT, y, { align: 'right' });
     };
 
-    const subtotal = Number(data.subtotal || data.total || 0);
-    const taxRate  = Number(data.tax || 0);
-    const taxAmt   = (subtotal * taxRate / 100);
-    const total    = Number(data.total || 0);
+    const subtotal = Number(data.subtotal || 0);
+    const taxAmt = Number(data.tax || 0);
+    const shipping = Number(data.shipping || 0);
+    const total = Number(data.total || 0);
 
     summaryRow('Subtotal', cur(subtotal), fy);
-    summaryRow(`Tax (${taxRate}%)`, cur(taxAmt), fy + 9);
+    if (taxAmt > 0) summaryRow('Tax', cur(taxAmt), fy + 8);
+    if (shipping > 0) summaryRow('Shipping', cur(shipping), fy + 16);
 
     // Divider above Total
     doc.setDrawColor(...lightGray);
     doc.setLineWidth(0.3);
-    doc.line(labelX, fy + 14, RIGHT, fy + 14);
+    doc.line(labelX, fy + 20, RIGHT, fy + 20);
 
-    summaryRow('Total', cur(total), fy + 22, true);
+    summaryRow('Total', cur(total), fy + 28, true);
 
     // ── Footer ───────────────────────────────────────
     const footerY = 258;
@@ -295,25 +301,31 @@ function renderClassic(doc, data, colors) {
         columnStyles: { 2: { halign: 'left' }, 3: { halign: 'left' }, 4: { halign: 'left' } }
     });
 
-    const finalY = doc.lastAutoTable.finalY + 15;
+    let currentY = doc.lastAutoTable.finalY + 15;
     doc.setFont("helvetica", "bold");
-    doc.text('Subtotal:', 140, finalY);
-    doc.text('Tax:', 140, finalY + 7);
-    doc.text('Discount:', 140, finalY + 14);
-    doc.setFont("helvetica", "normal");
-    doc.text(`${data.currency}${data.subtotal}`, 190, finalY, { align: 'right' });
-    doc.text(`${data.currency}${data.tax}`, 190, finalY + 7, { align: 'right' });
-    doc.text(`${data.currency}${data.discount}`, 190, finalY + 14, { align: 'right' });
+    
+    const drawRow = (label, value) => {
+        doc.setFont("helvetica", "bold");
+        doc.text(label, 140, currentY);
+        doc.setFont("helvetica", "normal");
+        doc.text(`${data.currency}${value}`, 190, currentY, { align: 'right' });
+        currentY += 7;
+    };
+
+    drawRow('Subtotal:', data.subtotal);
+    if (data.tax > 0) drawRow('Tax:', data.tax);
+    if (data.discount > 0) drawRow('Discount:', data.discount);
+    if (data.shipping > 0) drawRow('Shipping:', data.shipping);
 
     doc.setFillColor(...colors.secondary);
-    doc.rect(130, finalY + 20, 70, 15, 'F');
+    doc.rect(130, currentY + 5, 70, 15, 'F');
     doc.setFontSize(14);
     doc.setTextColor(...colors.primary);
     doc.setFont("helvetica", "bold");
-    doc.text('Total Amount:', 135, finalY + 30);
-    doc.text(`${data.currency}${data.total}`, 190, finalY + 30, { align: 'right' });
+    doc.text('Total Amount:', 135, currentY + 15);
+    doc.text(`${data.currency}${data.total}`, 190, currentY + 15, { align: 'right' });
 
-    finishDoc(doc, data, colors, finalY);
+    finishDoc(doc, data, colors, currentY + 25);
     return saveDoc(doc, data.invoiceNo);
 }
 
@@ -640,11 +652,22 @@ function renderCrackers(doc, data, colors) {
     };
 
     summaryRow('Net Total:', cur(data.subtotal), footerTop + 6);
-    summaryRow('Discount With Total:', cur(data.discount), footerTop + 13);
-    summaryRow('Package Charge:', '0.00', footerTop + 20);
+    let currentY = footerTop + 13;
+    if (data.discount > 0) {
+        summaryRow('Discount:', cur(data.discount), currentY);
+        currentY += 7;
+    }
+    if (data.tax > 0) {
+        summaryRow('Tax:', cur(data.tax), currentY);
+        currentY += 7;
+    }
+    if (data.shipping > 0) {
+        summaryRow('Shipping:', cur(data.shipping), currentY);
+        currentY += 7;
+    }
     
-    doc.line(totalsX, footerTop + 24, RIGHT, footerTop + 24);
-    summaryRow('Total:', cur(data.total), footerTop + 30, true);
+    doc.line(totalsX, currentY, RIGHT, currentY);
+    summaryRow('Total:', cur(data.total), currentY + 6, true);
 
     doc.setFontSize(7);
     doc.setTextColor(...gray);

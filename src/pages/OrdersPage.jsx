@@ -281,7 +281,7 @@ function OrderDrawer({ order, onClose, onEdit, onDelete, onStatusChange, onPayme
                     <div className="space-y-2">
                         <p className="text-xs font-semibold text-gray-400">Quick Actions</p>
                         <button onClick={() => generateInvoicePDF(
-                            { id: order.id, totalAmount: order.totalAmount, products: order.products || [{ name: order.productName, qty: order.quantity, price: order.totalAmount / (order.quantity || 1) }] },
+                            order,
                             { name: order.customerName, address: order.customerAddress || '', phone: order.customerPhone || '' }
                         )} className="w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
                             <div className="flex items-center gap-2"><FileText size={14} className="text-blue-500" /> Generate Invoice</div>
