@@ -73,9 +73,15 @@ export default function IntegrationsPage() {
     };
 
     const saveIntegration = async () => {
+        const platform = INTEGRATION_PLATFORMS.find(p => p.id === modal.platformId);
+        // Validation
+        const missing = platform.fields.filter(f => !f.readOnly && !form[f.id]);
+        if (missing.length > 0) {
+            return toast.error(`Please fill in: ${missing.map(f => f.label).join(', ')}`);
+        }
+
         setSaving(true);
         try {
-            const platform = INTEGRATION_PLATFORMS.find(p => p.id === modal.platformId);
             const { storeName, webhookSecret: manualSecret, ...credentials } = form;
             const finalSecret = manualSecret || Math.random().toString(36).substring(2, 15);
 

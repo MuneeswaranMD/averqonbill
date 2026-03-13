@@ -157,6 +157,7 @@ app.post('/api/integrations/:id/sync-products', async (req, res) => {
     }
 
     console.log(`[Product Sync] Starting for ${int.platform} - ${int.storeName} (${int._id})`);
+    console.log(`[Product Sync] Store URL: ${int.credentials?.storeUrl}`);
     
     let result;
     if (int.platform === 'shopify') {
