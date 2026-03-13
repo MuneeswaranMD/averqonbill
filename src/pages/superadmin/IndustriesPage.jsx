@@ -10,14 +10,7 @@ import {
 import { db } from '../../lib/firebase';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const ALL_MODULES = [
-    'Dashboard', 'Products', 'Inventory', 'POS Billing', 'Orders',
-    'Customers', 'Invoices', 'Payments', 'Reports', 'Bulk Orders',
-    'Suppliers', 'Purchase Orders', 'Delivery', 'Destinations',
-    'Tour Packages', 'Bookings', 'Schedules', 'Agents', 'Services',
-    'Appointments', 'Staff', 'Projects', 'Materials', 'Labor',
-    'Time Tracking', 'CRM', 'Automation', 'Notifications', 'API Access'
-];
+import { ALL_MODULES, ALL_INDUSTRIES } from '../../config/industryModules';
 
 const INDUSTRY_COLORS = [
     { label: 'Blue', value: 'from-blue-500 to-blue-600', preview: 'bg-blue-500' },
@@ -304,14 +297,4 @@ export default function IndustriesPage() {
 }
 
 // Default seed data for first load
-const DEFAULT_INDUSTRIES = [
-    { id: 'retail', name: 'Retail Store', icon: '🛍️', color: 'from-blue-500 to-blue-600', description: 'Products, POS billing and inventory management', modules: ['Dashboard', 'Products', 'Inventory', 'POS Billing', 'Customers', 'Orders', 'Invoices', 'Payments', 'Reports'], status: 'active' },
-    { id: 'wholesale', name: 'Wholesale', icon: '🚚', color: 'from-emerald-500 to-emerald-600', description: 'Bulk orders, suppliers and delivery tracking', modules: ['Dashboard', 'Products', 'Bulk Orders', 'Inventory', 'Suppliers', 'Purchase Orders', 'Invoices', 'Delivery', 'Reports'], status: 'active' },
-    { id: 'tours', name: 'Tours & Travels', icon: '✈️', color: 'from-sky-500 to-sky-600', description: 'Destinations, packages and booking management', modules: ['Dashboard', 'Destinations', 'Tour Packages', 'Bookings', 'Customers', 'Payments', 'Schedules', 'Agents', 'Reports'], status: 'active' },
-    { id: 'service', name: 'Service Business', icon: '🔧', color: 'from-violet-500 to-violet-600', description: 'Appointments, staff and service billing', modules: ['Dashboard', 'Services', 'Appointments', 'Customers', 'Invoices', 'Payments', 'Staff', 'Reports'], status: 'active' },
-    { id: 'construction', name: 'Construction', icon: '🏗️', color: 'from-amber-500 to-amber-600', description: 'Projects, materials and labor tracking', modules: ['Dashboard', 'Projects', 'Materials', 'Labor', 'Customers', 'Invoices', 'Payments', 'Reports'], status: 'active' },
-    { id: 'restaurant', name: 'Restaurant / Food', icon: '🍽️', color: 'from-red-500 to-red-600', description: 'Menu management, table orders and billing', modules: ['Dashboard', 'Products', 'Orders', 'Customers', 'Payments', 'Staff', 'Reports'], status: 'active' },
-    { id: 'freelancer', name: 'Freelancer', icon: '💻', color: 'from-pink-500 to-pink-600', description: 'Projects, time tracking and invoicing', modules: ['Dashboard', 'Services', 'Projects', 'Customers', 'Time Tracking', 'Invoices', 'Payments', 'Reports'], status: 'active' },
-    { id: 'ecommerce', name: 'E-commerce', icon: '🛒', color: 'from-indigo-500 to-indigo-600', description: 'Online store, orders and shipping management', modules: ['Dashboard', 'Products', 'Inventory', 'Orders', 'Customers', 'Invoices', 'Payments', 'Reports'], status: 'active' },
-    { id: 'manufacturing', name: 'Manufacturing', icon: '🏭', color: 'from-orange-500 to-orange-600', description: 'Production, materials and order management', modules: ['Dashboard', 'Products', 'Materials', 'Inventory', 'Orders', 'Invoices', 'Payments', 'Reports'], status: 'active' },
-];
+const DEFAULT_INDUSTRIES = ALL_INDUSTRIES;

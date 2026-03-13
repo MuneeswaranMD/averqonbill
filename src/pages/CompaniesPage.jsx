@@ -10,8 +10,10 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsToolti
 import { format, subDays, isSameDay } from 'date-fns';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
-import { Plus, Mail, Lock, User as UserIcon } from 'lucide-react';
+import { Plus, Mail, Lock, User as UserIcon, Check, Settings2, ShieldCheck, LayoutGrid, ToggleRight as ToggleIcon, Globe, Save, FolderKanban, Cpu, Bell, Target, Code2, PackagePlus, ShoppingBag, Box, HardHat, CalendarClock, MapPin } from 'lucide-react';
+import * as Icons from 'lucide-react';
 import { Input, Button } from '../components/ui';
+import { ALL_MODULES, ALL_INDUSTRIES, DEFAULT_MODULES_BY_INDUSTRY } from '../config/industryModules';
 
 const PLAN_BADGE = {
     starter: 'bg-gray-100 text-gray-600',
@@ -43,11 +45,20 @@ export default function CompaniesPage() {
     const [selectedCompany, setSelectedCompany] = useState(null);
     const [companyStats, setCompanyStats] = useState({ users: 0, orders: 0, revenue: 0, products: 0 });
     const [companyChartData, setCompanyChartData] = useState([]);
+    const [draftModules, setDraftModules] = useState([]);
     const [actionLoading, setActionLoading] = useState(false);
 
     // Create View State
     const [isCreating, setIsCreating] = useState(false);
-    const [newCompany, setNewCompany] = useState({ name: '', ownerName: '', ownerEmail: '', phone: '', password: '', plan: 'starter' });
+    const [newCompany, setNewCompany] = useState({
+        name: '',
+        ownerName: '',
+        ownerEmail: '',
+        phone: '',
+        password: '',
+        plan: 'starter',
+        industry: 'retail'
+    });
     const [createError, setCreateError] = useState('');
 
     useEffect(() => {
@@ -114,6 +125,7 @@ export default function CompaniesPage() {
                 return { name: format(date, 'MMM dd'), orders: dayOrders.length, revenue: dayRev };
             });
             setCompanyChartData(chartData);
+            setDraftModules(company.modules || []);
 
         } catch (e) {
             console.error("Details fetch error:", e);
@@ -145,6 +157,29 @@ export default function CompaniesPage() {
                     setSelectedCompany(null);
                 }
             }
+            if (actionType === 'toggleModule') {
+                const currentModules = selectedCompany.modules || [];
+                const newModules = currentModules.includes(payload)
+                    ? currentModules.filter(m => m !== payload)
+                    : [...currentModules, payload];
+
+                await updateDoc(docRef, { modules: newModules, updatedAt: serverTimestamp() });
+                setCompanies(prev => prev.map(c => c.id === companyId ? { ...c, modules: newModules } : c));
+                setSelectedCompany(prev => ({ ...prev, modules: newModules }));
+            }
+            if (actionType === 'changeIndustry') {
+                const defaultMods = DEFAULT_MODULES_BY_INDUSTRY[payload] || [];
+                await updateDoc(docRef, { industry: payload, modules: defaultMods, updatedAt: serverTimestamp() });
+                setCompanies(prev => prev.map(c => c.id === companyId ? { ...c, industry: payload, modules: defaultMods } : c));
+                setSelectedCompany(prev => ({ ...prev, industry: payload, modules: defaultMods }));
+                setDraftModules(defaultMods);
+            }
+            if (actionType === 'saveModules') {
+                await updateDoc(docRef, { modules: draftModules, updatedAt: serverTimestamp() });
+                setCompanies(prev => prev.map(c => c.id === companyId ? { ...c, modules: draftModules } : c));
+                setSelectedCompany(prev => ({ ...prev, modules: draftModules }));
+                alert('Permissions updated successfully!');
+            }
         } catch (e) {
             console.error("Action Error:", e);
         } finally {
@@ -173,6 +208,8 @@ export default function CompaniesPage() {
                 phone: newCompany.phone || '',
                 status: 'active',
                 plan: newCompany.plan,
+                industry: newCompany.industry,
+                modules: DEFAULT_MODULES_BY_INDUSTRY[newCompany.industry] || [],
                 ownerUid: uid,
                 createdAt: serverTimestamp()
             });
@@ -191,7 +228,7 @@ export default function CompaniesPage() {
             await signOut(secondaryAuth);
 
             setIsCreating(false);
-            setNewCompany({ name: '', ownerName: '', ownerEmail: '', phone: '', password: '', plan: 'starter' });
+            setNewCompany({ name: '', ownerName: '', ownerEmail: '', phone: '', password: '', plan: 'starter', industry: 'retail' });
             loadCompanies();
 
         } catch (err) {
@@ -241,6 +278,14 @@ export default function CompaniesPage() {
                                         <option value="starter">Starter</option>
                                         <option value="growth">Growth</option>
                                         <option value="enterprise">Enterprise</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-semibold text-gray-500">Industry Type</label>
+                                    <select value={newCompany.industry} onChange={e => setNewCompany({ ...newCompany, industry: e.target.value })} className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                                        {ALL_INDUSTRIES.map(ind => (
+                                            <option key={ind.id} value={ind.id}>{ind.name}</option>
+                                        ))}
                                     </select>
                                 </div>
                             </div>
@@ -430,6 +475,89 @@ export default function CompaniesPage() {
                                         <Area type="monotone" dataKey="orders" stroke="#F59E0B" strokeWidth={3} fillOpacity={1} fill="url(#colorOrders)" />
                                     </AreaChart>
                                 </ResponsiveContainer>
+                            </div>
+                        </div>
+
+                        {/* Module Permissions (SaaS Menu Control) */}
+                        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                            <div className="p-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between bg-gray-50/50 gap-4">
+                                <div>
+                                    <h3 className="text-sm font-bold text-gray-900">Dashboard Menu Control</h3>
+                                    <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest mt-0.5">Selective Feature Enablement</p>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-3">
+                                    <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-2 py-1 shadow-sm">
+                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Profile:</p>
+                                        <select
+                                            value={selectedCompany.industry}
+                                            onChange={(e) => handleAction(selectedCompany.id, 'changeIndustry', e.target.value)}
+                                            className="text-xs font-bold bg-transparent outline-none cursor-pointer"
+                                        >
+                                            {ALL_INDUSTRIES.map(ind => <option key={ind.id} value={ind.id}>{ind.name}</option>)}
+                                        </select>
+                                    </div>
+                                    <button
+                                        onClick={() => handleAction(selectedCompany.id, 'saveModules')}
+                                        disabled={actionLoading || JSON.stringify(draftModules) === JSON.stringify(selectedCompany.modules)}
+                                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-100 disabled:text-gray-400 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm"
+                                    >
+                                        <Save size={14} /> Update Menu Access
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="p-6">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {ALL_MODULES.map(module => {
+                                        const isEnabled = draftModules.includes(module.id);
+                                        const IconComp = Icons[module.icon] || Icons.LayoutGrid;
+                                        return (
+                                            <div
+                                                key={module.id}
+                                                className={`p-4 rounded-2xl border transition-all flex items-start justify-between group ${isEnabled
+                                                    ? 'bg-blue-50/20 border-blue-200 shadow-sm'
+                                                    : 'bg-white border-gray-100 hover:border-gray-200'
+                                                    }`}
+                                            >
+                                                <div className="flex items-start gap-3">
+                                                    <div className={`h-10 w-10 rounded-xl flex items-center justify-center transition-all ${isEnabled
+                                                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                                                        : 'bg-gray-100 text-gray-400'
+                                                        }`}>
+                                                        <IconComp size={18} />
+                                                    </div>
+                                                    <div className="min-w-0 pr-2">
+                                                        <p className={`text-xs font-bold leading-tight mb-1 ${isEnabled ? 'text-gray-900' : 'text-gray-400'}`}>
+                                                            {module.id}
+                                                        </p>
+                                                        <p className="text-[9px] text-gray-500 font-medium leading-relaxed line-clamp-2">
+                                                            {module.description}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() => {
+                                                        const newModules = isEnabled
+                                                            ? draftModules.filter(m => m !== module.id)
+                                                            : [...draftModules, module.id];
+                                                        setDraftModules(newModules);
+                                                    }}
+                                                    className={`h-5 w-9 rounded-full relative transition-all focus:outline-none flex-shrink-0 mt-1 ${isEnabled ? 'bg-blue-600 shadow-inner' : 'bg-gray-200'
+                                                        }`}
+                                                >
+                                                    <div className={`absolute top-0.5 left-0.5 h-4 w-4 bg-white rounded-full transition-transform shadow-md transform ${isEnabled ? 'translate-x-4' : 'translate-x-0'
+                                                        }`} />
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                <div className="mt-8 pt-6 border-t border-gray-100 flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-green-600">
+                                        <ShieldCheck size={16} />
+                                        <span className="text-[10px] font-black uppercase tracking-widest pt-0.5">Live Permission Protocol Active</span>
+                                    </div>
+                                    <p className="text-[10px] text-gray-400 font-medium italic">Permissions are applied instantly to the business session after saving.</p>
+                                </div>
                             </div>
                         </div>
 

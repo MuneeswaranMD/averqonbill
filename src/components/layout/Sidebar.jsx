@@ -28,6 +28,7 @@ import {
     CheckCircle2,
     Bell,
     Users2,
+    Globe,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCompanySettings } from '../../hooks/useCompanySettings';
@@ -50,6 +51,7 @@ const ALL_NAV_ITEMS = [
     { name: 'Staff', href: '/staff', icon: Users2, moduleKey: 'Staff' },
     { name: 'Notifications', href: '/notifications', icon: Bell, alwaysShow: true },
     { name: 'Automation', href: '/automation', icon: Cpu, alwaysShow: true },
+    { name: 'Integrations', href: '/integrations', icon: Globe, alwaysShow: true },
     { name: 'Reports', href: '/reports', icon: BarChart3, moduleKey: 'Reports' },
 ];
 

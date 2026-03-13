@@ -93,104 +93,164 @@ const INDUSTRY_DATA = {
 
 export default function IndustryDetailPage() {
     const { industryId } = useParams();
-    const data = INDUSTRY_DATA[industryId] || INDUSTRY_DATA.retail; // Fallback for demo
+    const data = INDUSTRY_DATA[industryId] || INDUSTRY_DATA.retail;
 
     return (
-        <div className="bg-white">
-            {/* Hero */}
-            <section className="relative pt-24 pb-20 bg-slate-900 text-white overflow-hidden">
+        <div className="bg-[#0B0F1A] min-h-screen">
+            {/* Hero Section */}
+            <section className="relative pt-40 pb-24 overflow-hidden">
+                {/* Background Grid Accent */}
+                <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
+                    style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '30px 30px' }}
+                />
+
                 <div className="max-w-7xl mx-auto px-4 lg:px-8 relative z-10">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-                        <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
-                            <div className={`h-16 w-16 ${data.color} rounded-2xl flex items-center justify-center mb-8 shadow-2xl`}>
-                                <data.icon size={32} />
+                        <motion.div
+                            initial={{ x: -30, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            transition={{ duration: 0.8 }}
+                        >
+                            <div className="flex items-center gap-4 mb-8">
+                                <div className={`h-16 w-16 bg-[#DFFF1B] rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(223,255,27,0.2)] text-black`}>
+                                    <data.icon size={32} strokeWidth={2.5} />
+                                </div>
+                                <div>
+                                    <span className="text-[#DFFF1B] font-black tracking-[0.3em] uppercase text-[10px] block mb-1">Vertical Engine v2.0</span>
+                                    <div className="h-1 w-12 bg-[#DFFF1B]/30 rounded-full" />
+                                </div>
                             </div>
-                            <span className="text-violet-400 font-black tracking-widest uppercase text-xs mb-4 inline-block italic">Vertical Solution</span>
-                            <h1 className="text-5xl md:text-7xl font-black mb-8 leading-[1.1] tracking-tight">{data.name}<span className="text-violet-500">.</span></h1>
-                            <p className="text-2xl text-slate-300 font-bold mb-8 italic">"{data.tagline}"</p>
-                            <p className="text-slate-400 text-lg font-medium leading-relaxed mb-12 max-w-lg">
+
+                            <h1 className="text-6xl md:text-8xl font-black mb-8 leading-[0.9] tracking-tighter text-white uppercase italic">
+                                {data.name}<span className="text-[#DFFF1B]">.</span>
+                            </h1>
+
+                            <p className="text-xl md:text-2xl text-slate-400 font-bold mb-10 italic leading-tight">
+                                "{data.tagline}"
+                            </p>
+
+                            <p className="text-slate-500 text-lg font-medium leading-relaxed mb-12 max-w-lg border-l-2 border-white/5 pl-8">
                                 {data.desc}
                             </p>
-                            <Link to="/login?mode=signup" className="inline-flex items-center gap-2 bg-white text-slate-900 px-10 py-5 rounded-2xl text-xl font-black hover:bg-slate-50 transition-all hover:scale-105 active:scale-95 shadow-2xl">
-                                Start Industry Trial <ArrowRight />
+
+                            <Link to="/login?mode=signup" className="group inline-flex items-center gap-4 bg-[#DFFF1B] text-black px-12 py-5 rounded-full text-xl font-black hover:bg-white transition-all shadow-[0_0_50px_rgba(223,255,27,0.1)] active:scale-95">
+                                Start Free Trial <ArrowRight className="group-hover:translate-x-2 transition-transform" />
                             </Link>
                         </motion.div>
-                        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="relative">
-                            <img src={data.image} alt={data.name} className="w-full aspect-[4/5] object-cover rounded-[4rem] shadow-2xl border-4 border-slate-800" />
-                            <div className="absolute bottom-10 -left-10 bg-white p-8 rounded-3xl shadow-2xl text-slate-900 border border-slate-100 hidden md:block max-w-xs">
-                                <div className="flex gap-4 items-center mb-4">
-                                    <div className="h-10 w-10 rounded-xl bg-green-50 text-green-600 flex items-center justify-center">
-                                        <Zap />
-                                    </div>
-                                    <p className="text-sm font-black uppercase tracking-widest">Industry Pulse</p>
-                                </div>
-                                <p className="text-slate-500 text-xs font-bold leading-relaxed">
-                                    Averqon automatically pre-configures 8 modules for your {data.name.toLowerCase()} workflow.
-                                </p>
+
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ duration: 1, ease: "easeOut" }}
+                            className="relative"
+                        >
+                            <div className="relative group">
+                                <img src={data.image} alt={data.name} className="w-full aspect-[4/5] object-cover rounded-[3rem] shadow-2xl border border-white/10 grayscale group-hover:grayscale-0 transition-all duration-700" />
+                                <div className="absolute inset-0 rounded-[3rem] bg-gradient-to-t from-[#0B0F1A] via-transparent to-transparent opacity-60" />
                             </div>
+
+                            {/* Floating Pulse Card */}
+                            <motion.div
+                                initial={{ y: 20, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                transition={{ delay: 0.5 }}
+                                className="absolute -bottom-10 -left-10 bg-[#1A1F2E]/80 backdrop-blur-2xl p-8 rounded-[2rem] shadow-2xl border border-white/10 hidden md:block max-w-xs"
+                            >
+                                <div className="flex gap-4 items-center mb-4">
+                                    <div className="h-10 w-10 rounded-xl bg-[#DFFF1B]/10 text-[#DFFF1B] flex items-center justify-center">
+                                        <Zap size={20} className="fill-current" />
+                                    </div>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white">System Pulse</p>
+                                </div>
+                                <p className="text-slate-400 text-xs font-bold leading-relaxed italic">
+                                    Averqon foundational engine has pre-configured <span className="text-[#DFFF1B]">{data.modules.length} modules</span> for {data.name.toLowerCase()} workflows.
+                                </p>
+                            </motion.div>
                         </motion.div>
                     </div>
                 </div>
-                <div className="absolute top-0 right-0 h-full w-1/3 bg-violet-600/5 blur-[100px] rounded-full pointer-events-none" />
             </section>
 
-            {/* Modules List */}
-            <section className="py-24">
+            {/* Modules Section */}
+            <section className="py-32 relative">
                 <div className="max-w-7xl mx-auto px-4 lg:px-8">
-                    <div className="text-center mb-20">
-                        <h2 className="text-4xl font-black text-slate-900 mb-6 tracking-tight">Everything you need for {data.name}</h2>
-                        <p className="max-w-xl mx-auto text-slate-500 font-medium">Industry-specific features engineered for your unique business requirements.</p>
+                    <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8">
+                        <div>
+                            <span className="text-[#DFFF1B] font-black tracking-[0.4em] uppercase text-[10px] mb-4 block">Core Architecture</span>
+                            <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter uppercase italic">Everything you need <br /> for <span className="text-[#DFFF1B]">{data.name}</span></h2>
+                        </div>
+                        <p className="max-w-md text-slate-500 font-medium italic">Industry-specific features engineered for unit-level tracking and high-scale operations.</p>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {data.modules.map((mod, i) => (
-                            <div key={i} className="p-10 rounded-[2.5rem] border border-slate-100 bg-white hover:border-violet-200 hover:shadow-2xl transition-all group">
-                                <div className="h-14 w-14 rounded-2xl bg-slate-50 text-slate-400 group-hover:bg-violet-600 group-hover:text-white flex items-center justify-center mb-8 transition-all">
+                            <motion.div
+                                key={i}
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: i * 0.1 }}
+                                className="p-10 rounded-[3rem] border border-white/5 bg-[#1A1F2E]/30 backdrop-blur-xl hover:border-[#DFFF1B]/20 transition-all group relative overflow-hidden"
+                            >
+                                <div className="h-14 w-14 rounded-2xl bg-white/5 text-slate-500 group-hover:bg-[#DFFF1B] group-hover:text-black flex items-center justify-center mb-8 transition-all duration-500">
                                     <CheckCircle2 size={24} />
                                 </div>
-                                <h3 className="text-2xl font-black text-slate-900 mb-4 tracking-tight uppercase">{mod}</h3>
-                                <p className="text-slate-500 font-medium text-sm leading-relaxed">
-                                    Optimized workflow for high-volume {data.name.toLowerCase()} environments with real-time sync.
+                                <h3 className="text-2xl font-black text-white mb-4 tracking-tight uppercase italic">{mod}</h3>
+                                <p className="text-slate-500 font-medium text-sm leading-relaxed mb-6 italic">
+                                    Optimized workflow for high-volume {data.name.toLowerCase()} environments with cloud-native sync.
                                 </p>
-                            </div>
+                                <div className="absolute top-0 right-0 p-8 opacity-0 group-hover:opacity-10 transition-opacity">
+                                    <Shield className="text-white w-20 h-20" />
+                                </div>
+                            </motion.div>
                         ))}
                     </div>
                 </div>
             </section>
 
             {/* Workflow Section */}
-            <section className="py-24 bg-slate-50">
+            <section className="py-32 bg-[#0B0F1A]">
                 <div className="max-w-5xl mx-auto px-4">
-                    <div className="bg-white rounded-[3.5rem] p-12 md:p-20 shadow-xl border border-slate-100">
-                        <h2 className="text-3xl font-black text-slate-900 mb-12 text-center tracking-tight uppercase tracking-widest">Integrated Workflow</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
-                            <div className="text-center md:col-span-1">
-                                <div className="h-20 w-20 rounded-3xl bg-slate-900 text-white flex items-center justify-center mx-auto mb-4 italic font-black text-xl">1</div>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Sign Up</p>
-                            </div>
-                            <div className="hidden md:block text-slate-200 text-center"><ArrowRight size={40} className="mx-auto" /></div>
-                            <div className="text-center md:col-span-1">
-                                <div className="h-20 w-20 rounded-3xl bg-violet-600 text-white flex items-center justify-center mx-auto mb-4 italic font-black text-xl">2</div>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Select {data.name}</p>
-                            </div>
-                            <div className="hidden md:block text-slate-200 text-center"><ArrowRight size={40} className="mx-auto" /></div>
-                            <div className="text-center md:col-span-1">
-                                <div className="h-20 w-20 rounded-3xl bg-slate-900 text-white flex items-center justify-center mx-auto mb-4 italic font-black text-xl">3</div>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Auto-Load Modules</p>
-                            </div>
+                    <div className="bg-[#1A1F2E]/20 backdrop-blur-2xl rounded-[4rem] p-12 md:p-20 border border-white/5 relative overflow-hidden">
+                        <h2 className="text-xs font-black text-[#DFFF1B] mb-12 text-center tracking-[0.5em] uppercase">Integrated Deployment Flow</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-5 gap-8 items-center relative z-10">
+                            {[
+                                { step: '01', title: 'Sign Up' },
+                                { step: '02', title: `Select ${data.name}` },
+                                { step: '03', title: 'Auto-Load' }
+                            ].map((item, idx) => (
+                                <React.Fragment key={idx}>
+                                    <div className="text-center group">
+                                        <div className="h-24 w-24 rounded-[2rem] bg-black border border-white/5 text-white flex items-center justify-center mx-auto mb-6 italic font-black text-2xl group-hover:border-[#DFFF1B]/50 transition-colors shadow-2xl">
+                                            {item.step}
+                                        </div>
+                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-[#DFFF1B]">{item.title}</h4>
+                                    </div>
+                                    {idx < 2 && (
+                                        <div className="hidden md:flex justify-center text-slate-800">
+                                            <ArrowRight size={32} />
+                                        </div>
+                                    )}
+                                </React.Fragment>
+                            ))}
                         </div>
+                        {/* Background Glow */}
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[#DFFF1B]/5 blur-[100px] pointer-events-none" />
                     </div>
                 </div>
             </section>
 
-            {/* CTA */}
-            <section className="py-24 text-center">
-                <div className="max-w-2xl mx-auto px-4">
-                    <h2 className="text-4xl font-black text-slate-900 mb-6 tracking-tight italic">Stop managing, start growing.</h2>
-                    <p className="text-slate-500 font-medium mb-12">Experience the power of a verticalized SaaS build specifically for your {data.name.toLowerCase()} business.</p>
-                    <Link to="/login?mode=signup" className="inline-flex items-center gap-2 bg-slate-900 text-white px-10 py-5 rounded-2xl text-xl font-black hover:bg-slate-800 transition-all hover:scale-110 active:scale-95 shadow-2xl">
-                        Try it Free <ArrowRight />
+            {/* Final CTA */}
+            <section className="py-32 text-center relative overflow-hidden">
+                <div className="max-w-2xl mx-auto px-4 relative z-10">
+                    <h2 className="text-5xl md:text-6xl font-black text-white mb-8 tracking-tighter uppercase italic">Stop Managing, <br /> <span className="text-[#DFFF1B]">Start Growing.</span></h2>
+                    <p className="text-slate-400 font-medium text-lg mb-12 italic">Experience the power of a foundational system built specifically for your {data.name.toLowerCase()} enterprise.</p>
+                    <Link to="/login?mode=signup" className="inline-flex items-center gap-3 bg-[#DFFF1B] text-black px-12 py-5 rounded-full text-xl font-black hover:bg-white transition-all hover:scale-105 active:scale-95 shadow-[0_0_50px_rgba(223,255,27,0.2)]">
+                        Initialize Trial <ArrowRight />
                     </Link>
                 </div>
+                {/* Decorative Elements */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-32 bg-gradient-to-b from-[#DFFF1B]/50 to-transparent" />
             </section>
         </div>
     );

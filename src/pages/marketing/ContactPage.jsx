@@ -12,7 +12,6 @@ export default function ContactPage() {
     const handleSubmit = (e) => {
         e.preventDefault();
         setLoading(true);
-        // Simulate API call
         setTimeout(() => {
             setLoading(false);
             setSubmitted(true);
@@ -20,47 +19,69 @@ export default function ContactPage() {
     };
 
     return (
-        <div className="bg-white min-h-screen">
-            {/* Hero */}
-            <section className="pt-24 pb-20 bg-slate-50 border-b border-slate-100">
-                <div className="max-w-7xl mx-auto px-4 text-center">
-                    <h1 className="text-5xl md:text-6xl font-black text-slate-900 mb-8 tracking-tight">Let's <span className="text-violet-600">Connect.</span></h1>
-                    <p className="max-w-2xl mx-auto text-xl text-slate-500 font-medium leading-relaxed">
-                        Have questions about our industry solutions? Our team is here to help you get started.
-                    </p>
+        <div className="bg-[#0B0F1A] min-h-screen">
+            {/* Hero Section */}
+            <section className="relative pt-40 pb-24 overflow-hidden border-b border-white/5">
+                <div className="max-w-7xl mx-auto px-4 text-center relative z-10">
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8 }}
+                    >
+                        <span className="text-[#DFFF1B] font-black tracking-[0.5em] uppercase text-[10px] mb-8 block italic">Communication Protocols v2.1</span>
+                        <h1 className="text-6xl md:text-9xl font-black text-white mb-10 tracking-tighter uppercase italic leading-[0.85]">
+                            INITIALIZE <br /><span className="text-[#DFFF1B]">CONTACT</span> <br /> LINK
+                        </h1>
+                        <p className="max-w-2xl mx-auto text-xl text-slate-500 font-bold leading-relaxed italic mt-10">
+                            Have questions about our foundational system? Our engineering team is here to help you get integrated across all business modules.
+                        </p>
+                    </motion.div>
                 </div>
+                {/* Decorative Elements */}
+                <div className="absolute top-0 right-0 w-64 h-64 bg-[#DFFF1B]/5 blur-[100px] rounded-full" />
             </section>
 
-            <section className="py-24">
+            <section className="py-32">
                 <div className="max-w-7xl mx-auto px-4 lg:px-8">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-20">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-32">
                         {/* Contact Info */}
-                        <div>
-                            <h2 className="text-3xl font-black text-slate-900 mb-8 tracking-tight">Contact Information</h2>
-                            <div className="space-y-10">
+                        <motion.div
+                            initial={{ opacity: 0, x: -30 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                        >
+                            <h2 className="text-4xl font-black text-white mb-16 tracking-tighter uppercase italic underline decoration-[#DFFF1B]/20 decoration-8">Native Channels</h2>
+
+                            <div className="space-y-12">
                                 {[
-                                    { icon: Mail, title: 'Email Support', detail: 'support@averqon.in', sub: 'Receive a response within 2 hours.' },
-                                    { icon: Phone, title: 'Sales Inquiry', detail: '+91 999 444 2221', sub: 'Mon-Sat, 9AM to 7PM IST' },
-                                    { icon: MessageCircle, title: 'Live Chat', detail: 'Available on platform', sub: 'Instant support for active users.' },
-                                    { icon: MapPin, title: 'Office', detail: 'Global Tech Park, Chennai, India', sub: 'Visit us for a demo (Appointment required).' }
+                                    { icon: Mail, title: 'Network Support', detail: 'support@averqon.in', sub: 'Receive a response within 2 business cycles.' },
+                                    { icon: Phone, title: 'Integration Inquiry', detail: '+91 999 444 2221', sub: '0900 to 1900 IST | Mon-Sat' },
+                                    { icon: MessageCircle, title: 'Live Terminal', detail: 'In-app Command Center', sub: 'Instant support for validated users.' },
+                                    { icon: MapPin, title: 'HQ Coordinates', detail: 'Global Tech Park, Chennai', sub: 'Physical visit requires appointment token.' }
                                 ].map((item, idx) => (
-                                    <div key={idx} className="flex gap-6 group">
-                                        <div className="h-14 w-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-600 group-hover:bg-violet-600 group-hover:text-white transition-all duration-300 transform group-hover:-rotate-6 shadow-sm">
-                                            <item.icon size={24} />
+                                    <div key={idx} className="flex gap-8 group">
+                                        <div className="h-16 w-16 rounded-[1.5rem] bg-white/5 border border-white/5 flex items-center justify-center text-slate-400 group-hover:bg-[#DFFF1B] group-hover:text-black transition-all duration-500 transform group-hover:-rotate-12 shadow-2xl">
+                                            <item.icon size={28} strokeWidth={2.5} />
                                         </div>
                                         <div>
-                                            <h4 className="text-lg font-bold text-slate-900 mb-1">{item.title}</h4>
-                                            <p className="text-xl font-black text-violet-600 mb-1">{item.detail}</p>
-                                            <p className="text-sm font-medium text-slate-500">{item.sub}</p>
+                                            <h4 className="text-[10px] font-black text-[#DFFF1B] mb-2 uppercase tracking-[0.3em] italic">{item.title}</h4>
+                                            <p className="text-2xl font-black text-white mb-2 italic tracking-tighter">{item.detail}</p>
+                                            <div className="h-px w-8 bg-white/10 group-hover:w-16 transition-all duration-500 mb-3" />
+                                            <p className="text-xs font-bold text-slate-600 uppercase tracking-widest">{item.sub}</p>
                                         </div>
                                     </div>
                                 ))}
                             </div>
-                        </div>
+                        </motion.div>
 
                         {/* Contact Form */}
-                        <div className="relative">
-                            <div className="bg-white rounded-[3rem] border border-slate-100 shadow-2xl p-10 md:p-12 relative z-10">
+                        <motion.div
+                            initial={{ opacity: 0, x: 30 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                            className="relative"
+                        >
+                            <div className="bg-[#1A1F2E]/30 backdrop-blur-3xl rounded-[4rem] border border-white/5 shadow-[0_0_100px_rgba(0,0,0,0.5)] p-12 md:p-16 relative z-10 overflow-hidden">
                                 <AnimatePresence mode="wait">
                                     {!submitted ? (
                                         <motion.form
@@ -69,37 +90,45 @@ export default function ContactPage() {
                                             animate={{ opacity: 1 }}
                                             exit={{ opacity: 0 }}
                                             onSubmit={handleSubmit}
-                                            className="space-y-6"
+                                            className="space-y-10"
                                         >
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div>
-                                                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 italic">Your Name</label>
-                                                    <input required type="text" placeholder="John Doe" className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-violet-500/10 focus:border-violet-500 outline-none transition-all" />
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                <div className="space-y-4">
+                                                    <label className="block text-[10px] font-black text-[#DFFF1B] uppercase tracking-[0.5em] italic">Identity Label</label>
+                                                    <input required type="text" placeholder="John O'Connor" className="w-full px-6 py-5 bg-black/40 border border-white/5 rounded-2xl text-sm font-bold text-white focus:border-[#DFFF1B] outline-none transition-all placeholder:text-slate-700 italic" />
                                                 </div>
-                                                <div>
-                                                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 italic">Work Email</label>
-                                                    <input required type="email" placeholder="john@company.com" className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-violet-500/10 focus:border-violet-500 outline-none transition-all" />
+                                                <div className="space-y-4">
+                                                    <label className="block text-[10px] font-black text-[#DFFF1B] uppercase tracking-[0.5em] italic">Network Address</label>
+                                                    <input required type="email" placeholder="john@enterprise.com" className="w-full px-6 py-5 bg-black/40 border border-white/5 rounded-2xl text-sm font-bold text-white focus:border-[#DFFF1B] outline-none transition-all placeholder:text-slate-700 italic" />
                                                 </div>
                                             </div>
-                                            <div>
-                                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 italic">Subject</label>
-                                                <select className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-violet-500/10 focus:border-violet-500 outline-none transition-all appearance-none">
-                                                    <option>Sales Inquiry</option>
-                                                    <option>Technical Support</option>
-                                                    <option>Partnership</option>
-                                                    <option>Job Opportunity</option>
-                                                </select>
+
+                                            <div className="space-y-4">
+                                                <label className="block text-[10px] font-black text-[#DFFF1B] uppercase tracking-[0.5em] italic">Transmission Topic</label>
+                                                <div className="relative">
+                                                    <select className="w-full px-6 py-5 bg-black/40 border border-white/5 rounded-2xl text-sm font-bold text-white focus:border-[#DFFF1B] outline-none transition-all appearance-none italic">
+                                                        <option className="bg-[#0B0F1A]">Enterprise Integration</option>
+                                                        <option className="bg-[#0B0F1A]">Technical Architecture</option>
+                                                        <option className="bg-[#0B0F1A]">Strategic Partnership</option>
+                                                        <option className="bg-[#0B0F1A]">Infrastructure Support</option>
+                                                    </select>
+                                                    <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-[#DFFF1B]">
+                                                        <Clock size={16} />
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 italic">How can we help?</label>
-                                                <textarea required rows={4} placeholder="Tell us more about your business needs..." className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-violet-500/10 focus:border-violet-500 outline-none transition-all resize-none"></textarea>
+
+                                            <div className="space-y-4">
+                                                <label className="block text-[10px] font-black text-[#DFFF1B] uppercase tracking-[0.5em] italic">Transmission Payload</label>
+                                                <textarea required rows={5} placeholder="Describe your data volume and architectural requirements..." className="w-full px-6 py-5 bg-black/40 border border-white/5 rounded-2xl text-sm font-bold text-white focus:border-[#DFFF1B] outline-none transition-all resize-none placeholder:text-slate-700 italic"></textarea>
                                             </div>
+
                                             <button
                                                 disabled={loading}
                                                 type="submit"
-                                                className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-lg hover:bg-slate-800 transition-all hover:shadow-2xl hover:shadow-slate-200 active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50"
+                                                className="group w-full bg-[#DFFF1B] text-black py-6 rounded-2xl font-black text-xl hover:bg-white transition-all shadow-[0_0_50px_rgba(223,255,27,0.15)] active:scale-95 flex items-center justify-center gap-4 disabled:opacity-50 uppercase italic tracking-[0.2em]"
                                             >
-                                                {loading ? 'Sending...' : <><Send size={20} className="fill-white" /> Send Message</>}
+                                                {loading ? 'MODULATING...' : <><Send size={24} className="group-hover:-translate-y-1 group-hover:translate-x-1 transition-transform" /> START TRANSMISSION</>}
                                             </button>
                                         </motion.form>
                                     ) : (
@@ -107,23 +136,29 @@ export default function ContactPage() {
                                             key="success"
                                             initial={{ scale: 0.9, opacity: 0 }}
                                             animate={{ scale: 1, opacity: 1 }}
-                                            className="py-12 text-center"
+                                            className="py-20 text-center"
                                         >
-                                            <div className="h-20 w-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-8">
-                                                <CheckCircle2 size={40} />
+                                            <div className="h-24 w-24 bg-[#DFFF1B]/10 text-[#DFFF1B] rounded-[2rem] flex items-center justify-center mx-auto mb-10 shadow-[0_0_40px_rgba(223,255,27,0.3)] animate-pulse">
+                                                <CheckCircle2 size={48} strokeWidth={3} />
                                             </div>
-                                            <h3 className="text-3xl font-black text-slate-900 mb-4 tracking-tight">Message Sent!</h3>
-                                            <p className="text-slate-500 font-medium mb-8">Thanks for reaching out. A team member will respond to you shortly.</p>
-                                            <button onClick={() => setSubmitted(false)} className="text-violet-600 font-bold hover:underline uppercase tracking-widest text-xs">
-                                                Send another message
+                                            <h3 className="text-5xl font-black text-white mb-6 tracking-tighter uppercase italic leading-tight">LINK <br /> ESTABLISHED</h3>
+                                            <p className="text-slate-500 font-bold mb-10 italic max-w-sm mx-auto uppercase tracking-wider text-xs">Transmission successfully captured by our core relay team. Stand by for response within 2 cycles.</p>
+                                            <button onClick={() => setSubmitted(false)} className="text-[#DFFF1B] font-black hover:text-white uppercase tracking-[0.4em] text-[10px] transition-colors">
+                                                Initialize New Connection
                                             </button>
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
+
+                                {/* Background Accent In Form */}
+                                <div className="absolute top-0 right-0 p-8 opacity-5">
+                                    <Globe size={150} className="text-[#DFFF1B]" />
+                                </div>
                             </div>
-                            {/* Decorative Blob */}
-                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-violet-600/5 blur-[100px] rounded-full -z-10" />
-                        </div>
+
+                            {/* Outer Glow */}
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[130%] h-[130%] bg-[#DFFF1B]/5 blur-[120px] rounded-full -z-10 pointer-events-none" />
+                        </motion.div>
                     </div>
                 </div>
             </section>

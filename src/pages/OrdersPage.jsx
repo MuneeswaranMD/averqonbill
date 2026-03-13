@@ -148,8 +148,15 @@ function OrderDrawer({ order, onClose, onEdit, onDelete, onStatusChange, onPayme
                 {/* Header */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                     <div>
-                        <h2 className="text-base font-semibold text-gray-900">Order Details</h2>
-                        <p className="text-xs font-mono text-gray-400 mt-0.5">ORD-{order.id.slice(-8).toUpperCase()}</p>
+                        <div className="flex items-center gap-2">
+                            <h2 className="text-base font-semibold text-gray-900">Order Details</h2>
+                            {order.source && (
+                                <span className="px-1.5 py-0.5 bg-indigo-50 text-indigo-600 text-[10px] font-bold rounded uppercase tracking-widest border border-indigo-100">
+                                    {order.source}
+                                </span>
+                            )}
+                        </div>
+                        <p className="text-xs font-mono text-gray-400 mt-0.5">ORD-{order.id?.slice(-8).toUpperCase()}</p>
                     </div>
                     <div className="flex items-center gap-2">
                         <button onClick={() => onEdit(order)}
@@ -493,8 +500,17 @@ export default function OrdersPage() {
                                 {filtered.map(o => (
                                     <tr key={o.id} className="hover:bg-gray-50 transition-colors cursor-pointer"
                                         onClick={() => setDrawer(o)}>
-                                        <td className="px-5 py-3.5 font-mono text-xs text-gray-500 font-semibold">
-                                            ORD-{o.id.slice(-8).toUpperCase()}
+                                        <td className="px-5 py-3.5">
+                                            <div className="flex flex-col">
+                                                <span className="font-mono text-[10px] text-gray-500 font-semibold tracking-tighter">
+                                                    ORD-{o.id?.toString().slice(-8).toUpperCase()}
+                                                </span>
+                                                {o.source && (
+                                                    <span className="text-[9px] font-black text-indigo-500 uppercase flex items-center gap-1 mt-0.5">
+                                                        <span className="h-1 w-1 rounded-full bg-indigo-500" /> {o.source}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </td>
                                         <td className="px-4 py-3.5">
                                             <div className="flex items-center gap-2">

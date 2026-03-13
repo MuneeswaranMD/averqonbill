@@ -58,6 +58,14 @@ const TEMPLATES = [
         icon: Briefcase,
         color: 'bg-slate-900',
         features: ['Solid navy header', 'Sophisticated grid', 'Corporate style']
+    },
+    {
+        id: 'crackers',
+        name: 'Crackers Special',
+        desc: 'Teal branding with evaluation watermark, "Content" column, and estimation layout.',
+        icon: Layout,
+        color: 'bg-[#009688]',
+        features: ['Teal branding', 'Evaluation watermark', 'Specific product details']
     }
 ];
 

@@ -59,79 +59,121 @@ const FEATURES = [
 
 export default function FeaturesPage() {
     return (
-        <div className="bg-white">
-            {/* Hero */}
-            <section className="pt-24 pb-20 bg-slate-50 border-b border-slate-100">
-                <div className="max-w-7xl mx-auto px-4 text-center">
-                    <h1 className="text-5xl md:text-6xl font-black text-slate-900 mb-8 tracking-tight">Powerful Capabilities. <br /><span className="text-violet-600 italic">Built for Scale.</span></h1>
-                    <p className="max-w-2xl mx-auto text-xl text-slate-500 font-medium leading-relaxed">
-                        Explore the core modules that power Averqon. Everything you need to manage and grow your small business in one place.
-                    </p>
+        <div className="bg-[#0B0F1A] min-h-screen">
+            {/* Hero Section */}
+            <section className="relative pt-40 pb-24 overflow-hidden">
+                <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
+                    style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '30px 30px' }}
+                />
+
+                <div className="max-w-7xl mx-auto px-4 text-center relative z-10">
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8 }}
+                    >
+                        <span className="text-[#DFFF1B] font-black tracking-[0.5em] uppercase text-[10px] mb-8 block italic">System Capabilities v4.2</span>
+                        <h1 className="text-6xl md:text-9xl font-black text-white mb-10 tracking-tighter uppercase italic leading-[0.85]">
+                            POWERFUL <br /><span className="text-[#DFFF1B]">NATIVE</span> <br /> MODULES
+                        </h1>
+                        <p className="max-w-2xl mx-auto text-xl text-slate-500 font-bold leading-relaxed italic mt-10">
+                            Explore the foundational blocks that power Averqon. Everything you need to manage and grow your enterprise in one secure hub.
+                        </p>
+                    </motion.div>
                 </div>
             </section>
 
-            {/* Grid */}
+            {/* Features Grid */}
             <section className="py-24">
                 <div className="max-w-7xl mx-auto px-4 lg:px-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {FEATURES.map((feature, i) => (
                             <motion.div
                                 key={i}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                whileInView={{ opacity: 1, scale: 1 }}
                                 viewport={{ once: true }}
-                                transition={{ delay: i * 0.1 }}
-                                className="p-10 rounded-[2.5rem] border border-slate-100 bg-white hover:border-violet-200 hover:shadow-2xl hover:shadow-violet-100 transition-all group"
+                                transition={{ delay: i * 0.05 }}
+                                className="p-12 rounded-[3.5rem] border border-white/5 bg-[#1A1F2E]/20 backdrop-blur-xl hover:border-[#DFFF1B]/20 hover:shadow-2xl hover:shadow-[#DFFF1B]/5 transition-all group relative overflow-hidden"
                             >
-                                <div className={`w-16 h-16 rounded-2xl ${feature.color} flex items-center justify-center mb-8 transition-transform group-hover:scale-110 duration-300`}>
-                                    <feature.icon size={32} />
+                                <div className="relative z-10">
+                                    <div className="w-16 h-16 rounded-[1.5rem] bg-[#DFFF1B] flex items-center justify-center mb-10 transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 text-black shadow-xl">
+                                        <feature.icon size={32} strokeWidth={2.5} />
+                                    </div>
+                                    <h3 className="text-3xl font-black text-white mb-6 tracking-tight uppercase italic">{feature.title}</h3>
+                                    <p className="text-slate-500 font-medium leading-relaxed text-sm italic">
+                                        {feature.desc}
+                                    </p>
                                 </div>
-                                <h3 className="text-2xl font-black text-slate-900 mb-4 tracking-tight">{feature.title}</h3>
-                                <p className="text-slate-500 font-medium leading-relaxed text-sm">
-                                    {feature.desc}
-                                </p>
+
+                                {/* Background Accent */}
+                                <div className="absolute top-0 right-0 p-10 opacity-0 group-hover:opacity-5 transition-opacity duration-700">
+                                    <feature.icon size={120} className="text-white" />
+                                </div>
                             </motion.div>
                         ))}
                     </div>
                 </div>
             </section>
 
-            {/* Integration highlight */}
-            <section className="py-24 bg-slate-900 text-white overflow-hidden relative">
+            {/* Integration Section: RADOM Style Upgrade */}
+            <section className="py-40 relative overflow-hidden">
                 <div className="max-w-7xl mx-auto px-4 relative z-10">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-                        <div className="order-2 lg:order-1">
-                            <div className="relative aspect-square max-w-md mx-auto lg:mx-0">
-                                <div className="absolute inset-0 bg-violet-600/20 blur-[100px] rounded-full" />
-                                <div className="p-8 border-2 border-slate-800 rounded-[3rem] bg-slate-800/50 backdrop-blur-xl h-full flex flex-col items-center justify-center gap-6">
-                                    <div className="flex gap-4">
-                                        <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-2xl">
-                                            <Zap className="text-slate-900 w-8 h-8 font-black" />
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-32 items-center">
+                        <div className="relative group">
+                            <motion.div
+                                initial={{ opacity: 0, x: -50 }}
+                                whileInView={{ opacity: 1, x: 0 }}
+                                className="relative aspect-square max-w-md mx-auto lg:mx-0 p-1 bg-gradient-to-br from-[#DFFF1B]/20 to-transparent rounded-[4rem]"
+                            >
+                                <div className="relative h-full w-full bg-[#0B0F1A] rounded-[3.8rem] flex flex-col items-center justify-center gap-12 border border-white/5">
+                                    {/* Central Orbit Visual */}
+                                    <div className="relative h-48 w-48 flex items-center justify-center">
+                                        <motion.div
+                                            animate={{ rotate: 360 }}
+                                            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                                            className="absolute inset-0 border-2 border-dashed border-[#DFFF1B]/20 rounded-full"
+                                        />
+                                        <div className="h-24 w-24 bg-[#DFFF1B] rounded-3xl flex items-center justify-center shadow-[0_0_50px_rgba(223,255,27,0.3)]">
+                                            <Zap size={40} className="text-black fill-current" />
                                         </div>
-                                        <div className="w-16 h-16 bg-violet-600 rounded-2xl flex items-center justify-center shadow-2xl">
-                                            <Database className="text-white w-8 h-8" />
+
+                                        {/* Orbiting Icons */}
+                                        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 p-4 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-xl">
+                                            <Database size={20} className="text-[#DFFF1B]" />
+                                        </div>
+                                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 p-4 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-xl">
+                                            <Cloud size={20} className="text-[#DFFF1B]" />
                                         </div>
                                     </div>
-                                    <div className="text-center font-bold text-lg opacity-80">Connected with 1,000+ Apps</div>
+
+                                    <div className="text-center">
+                                        <div className="text-sm font-black text-white uppercase tracking-[0.3em] mb-2 italic">Hyper-Connectivity</div>
+                                        <div className="h-1 w-12 bg-[#DFFF1B] mx-auto rounded-full" />
+                                    </div>
                                 </div>
-                            </div>
+                            </motion.div>
                         </div>
-                        <div className="order-1 lg:order-2">
-                            <span className="text-violet-400 font-black tracking-widest uppercase text-xs mb-4 inline-block">Automation & Integrations</span>
-                            <h2 className="text-4xl md:text-5xl font-black mb-8 leading-tight tracking-tight">Seamlessly Integrated with <span className="text-violet-400 italic font-medium">Everything.</span></h2>
-                            <p className="text-slate-400 text-lg font-medium leading-relaxed mb-10">
+
+                        <div>
+                            <span className="text-[#DFFF1B] font-black tracking-[0.5em] uppercase text-[10px] mb-6 block italic">Integrations & API</span>
+                            <h2 className="text-5xl md:text-7xl font-black text-white mb-10 leading-[0.9] tracking-tighter uppercase italic">SEAMLESS <br /> DATA <br /><span className="text-[#DFFF1B]">PIPELINES</span></h2>
+                            <p className="text-slate-500 text-lg font-medium leading-relaxed mb-12 italic border-l-2 border-white/5 pl-8">
                                 Connect Averqon with n8n, Zapier, Slack, and Shopify. Post notifications to Telegram, sync orders with Excel, or trigger custom webhooks effortlessly.
                             </p>
-                            <ul className="space-y-4">
-                                {['Direct n8n Integration', 'REST API Access', 'Webhooks Support'].map((item) => (
-                                    <li key={item} className="flex items-center gap-3 font-bold text-slate-200">
-                                        <div className="h-6 w-6 rounded-full bg-violet-600 flex items-center justify-center">
-                                            <CheckCircle2 size={14} className="text-white" />
-                                        </div>
-                                        {item}
-                                    </li>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                {['Direct n8n Native', 'REST API v4.0', 'Webhook Callbacks', 'Enterprise Sync'].map((item) => (
+                                    <motion.div
+                                        key={item}
+                                        whileHover={{ x: 10 }}
+                                        className="flex items-center gap-4 bg-white/5 border border-white/5 p-4 rounded-2xl"
+                                    >
+                                        <div className="h-2 w-2 rounded-full bg-[#DFFF1B] shadow-[0_0_10px_rgba(223,255,27,0.5)]" />
+                                        <span className="text-xs font-black text-white uppercase tracking-widest">{item}</span>
+                                    </motion.div>
                                 ))}
-                            </ul>
+                            </div>
                         </div>
                     </div>
                 </div>

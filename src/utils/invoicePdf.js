@@ -57,6 +57,8 @@ export const generateInvoicePDF = (order, customer, templateId = 'classic') => {
             return renderMinimal(doc, data, colors);
         case 'professional':
             return renderProfessional(doc, data, colors);
+        case 'crackers':
+            return renderCrackers(doc, data, colors);
         case 'classic':
         default:
             return renderClassic(doc, data, colors);
@@ -483,6 +485,168 @@ function renderProfessional(doc, data, colors) {
     doc.text(`GRAND TOTAL: ${data.currency}${data.total}`, 190, finalY + 10, { align: 'right' });
 
     finishDoc(doc, data, colors, finalY + 30);
+    return saveDoc(doc, data.invoiceNo);
+}
+
+function renderCrackers(doc, data, colors) {
+    const teal = [0, 150, 136];
+    const black = [20, 20, 20];
+    const gray = [100, 100, 100];
+    const W = 210;
+    const MARGIN = 10;
+    const RIGHT = W - MARGIN;
+    const centerX = W / 2;
+
+    const cur = (amt) => `${Number(amt || 0).toFixed(2)}`;
+
+    // ── Watermark (Logo background) ──────────────────
+    const centerY = 160;
+    doc.setGState(new doc.GState({ opacity: 0.1 }));
+    doc.setFillColor(...teal);
+    doc.setDrawColor(...teal);
+    doc.setLineWidth(1);
+    
+    // Draw outer circle
+    doc.circle(centerX, centerY, 60, 'S');
+    
+    // Draw Sun rays effect
+    for (let i = 0; i < 36; i++) {
+        const angle = (i * 10) * Math.PI / 180;
+        const x1 = centerX + Math.cos(angle) * 35;
+        const y1 = centerY + Math.sin(angle) * 35;
+        const x2 = centerX + Math.cos(angle) * 55;
+        const y2 = centerY + Math.sin(angle) * 55;
+        doc.line(x1, y1, x2, y2);
+    }
+
+    // Logo Text "MPD Q"
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(80);
+    doc.text('M', centerX - 10, centerY - 10, { align: 'center' });
+    doc.text('P', centerX - 10, centerY + 15, { align: 'center' });
+    doc.text('D', centerX - 10, centerY + 40, { align: 'center' });
+    
+    doc.setFontSize(140);
+    doc.text('Q', centerX + 15, centerY + 20, { align: 'center' });
+    
+    doc.setGState(new doc.GState({ opacity: 1.0 }));
+
+    // ── Header Bar ───────────────────────────────────
+    doc.setFillColor(...teal);
+    doc.rect(MARGIN, MARGIN, RIGHT - MARGIN, 8, 'F');
+    
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(255, 255, 255);
+    doc.text(`Enquiry No : ${data.invoiceNo}`, MARGIN + 2, MARGIN + 5.5);
+    doc.text('Estimation', centerX, MARGIN + 5.5, { align: 'center' });
+    doc.text(`Date : ${data.date}`, RIGHT - 2, MARGIN + 5.5, { align: 'right' });
+
+    // ── Shop Details ─────────────────────────────────
+    doc.setTextColor(...black);
+    doc.setFontSize(14);
+    doc.text(data.company.name, MARGIN, 28);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text(data.company.address, MARGIN, 33, { maxWidth: 80 });
+    doc.text(`Phone : ${data.company.phone}`, MARGIN, 40);
+
+    // ── Customer Details ─────────────────────────────
+    doc.setFont('helvetica', 'bold');
+    doc.text(data.customer.name, RIGHT, 28, { align: 'right' });
+    doc.setFont('helvetica', 'normal');
+    doc.text(data.customer.address, RIGHT, 33, { align: 'right', maxWidth: 80 });
+    doc.text(`Email : ${data.customer.email || 'N/A'}`, RIGHT, 40, { align: 'right' });
+    doc.text(`Phone : ${data.customer.phone}`, RIGHT, 45, { align: 'right' });
+
+    // ── Table ────────────────────────────────────────
+    const tableBody = data.items.map((item, i) => [
+        i + 1,
+        item.name || '',
+        item.unit || 'BOX',
+        item.qty || 1,
+        cur(item.price),
+        cur(item.total)
+    ]);
+
+    autoTable(doc, {
+        startY: 55,
+        margin: { left: MARGIN, right: MARGIN },
+        head: [[
+            'S No',
+            'Product Name',
+            'Content',
+            'Qty',
+            'Rate',
+            'Amount'
+        ]],
+        body: tableBody,
+        theme: 'grid',
+        headStyles: {
+            fillColor: teal,
+            textColor: 255,
+            fontSize: 9,
+            halign: 'center',
+            cellPadding: 2
+        },
+        styles: {
+            fontSize: 8,
+            textColor: black,
+            cellPadding: 2,
+            lineColor: [200, 200, 200],
+            lineWidth: 0.1
+        },
+        columnStyles: {
+            0: { halign: 'center', cellWidth: 12 },
+            1: { halign: 'left' },
+            2: { halign: 'center', cellWidth: 20 },
+            3: { halign: 'center', cellWidth: 15 },
+            4: { halign: 'right', cellWidth: 25 },
+            5: { halign: 'right', cellWidth: 30 }
+        }
+    });
+
+    // ── Summary / Footer ─────────────────────────────
+    const finalY = doc.lastAutoTable.finalY;
+    const footerTop = Math.max(finalY + 10, 240); 
+    
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(...teal);
+    doc.text('Payments Details', MARGIN, footerTop - 2);
+    
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.1);
+    doc.rect(MARGIN, footerTop, 100, 35);
+    
+    doc.setFontSize(8);
+    doc.setTextColor(...black);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Bank name : ${data.company.bank || 'N/A'}`, MARGIN + 2, footerTop + 6);
+    doc.text(`Acc Holder Name : ${data.company.name}`, MARGIN + 2, footerTop + 13);
+    doc.text(`IFSC Code : ${data.company.ifsc || 'N/A'}`, MARGIN + 2, footerTop + 20);
+    doc.text(`UPI ID : ${data.company.phone}`, MARGIN + 2, footerTop + 27);
+
+    const totalsX = 110;
+    doc.rect(totalsX, footerTop, RIGHT - totalsX, 35);
+    
+    const summaryRow = (label, value, y, bold = false) => {
+        doc.setFont('helvetica', bold ? 'bold' : 'normal');
+        doc.text(label, RIGHT - 40, y, { align: 'right' });
+        doc.text(value, RIGHT - 2, y, { align: 'right' });
+    };
+
+    summaryRow('Net Total:', cur(data.subtotal), footerTop + 6);
+    summaryRow('Discount With Total:', cur(data.discount), footerTop + 13);
+    summaryRow('Package Charge:', '0.00', footerTop + 20);
+    
+    doc.line(totalsX, footerTop + 24, RIGHT, footerTop + 24);
+    summaryRow('Total:', cur(data.total), footerTop + 30, true);
+
+    doc.setFontSize(7);
+    doc.setTextColor(...gray);
+    doc.text('Page 1 of 1', centerX, 292, { align: 'center' });
+
     return saveDoc(doc, data.invoiceNo);
 }
 

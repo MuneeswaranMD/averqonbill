@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import {
     Building2, ShoppingCart, Truck, Factory,
     Wrench, Plane, Construction, User, Utensils,
-    ArrowRight, CheckCircle2, Package, Layers, Zap
+    ArrowRight, CheckCircle2, Package, Layers, Zap, LayoutDashboard
 } from 'lucide-react';
 
 const INDUSTRIES = [
@@ -21,61 +21,82 @@ const INDUSTRIES = [
 
 export default function IndustriesMarketingPage() {
     return (
-        <div className="bg-white">
-            {/* Hero */}
-            <section className="pt-24 pb-20 bg-slate-900 text-white relative overflow-hidden">
+        <div className="bg-[#0B0F1A] min-h-screen">
+            {/* Hero Section */}
+            <section className="relative pt-40 pb-24 overflow-hidden">
+                {/* Dot Matrix Background */}
+                <div className="absolute inset-0 opacity-[0.05] pointer-events-none"
+                    style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }}
+                />
+
                 <div className="max-w-7xl mx-auto px-4 text-center relative z-10">
-                    <h1 className="text-5xl md:text-7xl font-black mb-8 tracking-tight">Built for <span className="text-violet-400">Every Business.</span></h1>
-                    <p className="max-w-2xl mx-auto text-xl text-slate-400 font-medium leading-relaxed">
-                        We've verticalized our SaaS to support 9+ distinct industries with specialized modules that load automatically.
-                    </p>
+                    <motion.div
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ duration: 0.6 }}
+                    >
+                        <span className="text-[#DFFF1B] font-black tracking-[0.5em] uppercase text-[10px] mb-6 block italic">Verticalized Architecture</span>
+                        <h1 className="text-6xl md:text-9xl font-black text-white mb-8 tracking-tighter uppercase italic leading-[0.85]">
+                            BUILT FOR <br /><span className="text-[#DFFF1B]">FOUNDATIONAL</span> <br /> GROWTH
+                        </h1>
+                        <p className="max-w-2xl mx-auto text-xl text-slate-500 font-bold leading-relaxed italic border-t border-white/5 pt-8 mt-8">
+                            We've verticalized our system to support 9+ distinct industries with specialized modules that load automatically.
+                        </p>
+                    </motion.div>
                 </div>
-                <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none overflow-hidden">
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 grid grid-cols-10 gap-4 rotate-12">
-                        {Array.from({ length: 100 }).map((_, i) => (
-                            <div key={i} className="w-12 h-12 rounded-lg border border-white/20" />
-                        ))}
-                    </div>
-                </div>
+
+                {/* Decorative Background Elements */}
+                <div className="absolute top-0 right-0 w-96 h-96 bg-[#DFFF1B]/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2" />
             </section>
 
             {/* Industry Grid */}
-            <section className="py-24">
+            <section className="py-32">
                 <div className="max-w-7xl mx-auto px-4 lg:px-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {INDUSTRIES.map((ind, i) => (
                             <motion.div
                                 key={ind.id}
-                                initial={{ opacity: 0, y: 20 }}
+                                initial={{ opacity: 0, y: 30 }}
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
                                 transition={{ delay: (i % 3) * 0.1 }}
-                                className="p-1 border border-slate-100 rounded-[3rem] bg-white hover:border-violet-200 hover:shadow-2xl transition-all group overflow-hidden"
+                                className="group relative p-1 border border-white/5 rounded-[3.5rem] bg-[#1A1F2E]/30 backdrop-blur-xl hover:border-[#DFFF1B]/20 transition-all duration-500 overflow-hidden"
                             >
-                                <div className="p-10">
-                                    <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${ind.color} flex items-center justify-center text-white mb-8 shadow-xl shadow-slate-200 group-hover:scale-110 transition-transform duration-300`}>
-                                        <ind.icon size={28} />
+                                <div className="p-10 relative z-10">
+                                    <div className="flex items-center justify-between mb-10">
+                                        <div className={`w-16 h-16 rounded-[1.5rem] bg-[#DFFF1B] flex items-center justify-center text-black shadow-2xl shadow-[#DFFF1B]/10 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500`}>
+                                            <ind.icon size={30} strokeWidth={2.5} />
+                                        </div>
+                                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic group-hover:text-[#DFFF1B] transition-colors">
+                                            Sector {String(i + 1).padStart(2, '0')}
+                                        </div>
                                     </div>
-                                    <h3 className="text-2xl font-black text-slate-900 mb-4 tracking-tight">{ind.name}</h3>
-                                    <p className="text-slate-500 font-medium leading-relaxed mb-8 text-sm">{ind.desc}</p>
+
+                                    <h3 className="text-3xl font-black text-white mb-4 tracking-tight uppercase italic">{ind.name}</h3>
+                                    <p className="text-slate-500 font-medium leading-relaxed mb-10 text-sm italic">{ind.desc}</p>
 
                                     <Link
                                         to={`/industry/${ind.id}`}
-                                        className="inline-flex items-center gap-2 text-violet-600 font-black text-xs uppercase tracking-widest hover:gap-3 transition-all mb-8 group-hover:text-violet-700"
+                                        className="group/link inline-flex items-center gap-3 bg-white/5 border border-white/10 text-white hover:bg-[#DFFF1B] hover:text-black px-6 py-3 rounded-full font-black text-[10px] uppercase tracking-widest transition-all mb-10"
                                     >
-                                        Explore Solutions <ArrowRight size={14} />
+                                        Explore Solutions <ArrowRight size={14} className="group-hover/link:translate-x-1 transition-transform" />
                                     </Link>
 
-                                    <div className="space-y-3 pt-6 border-t border-slate-50">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Included Modules</p>
+                                    <div className="space-y-4 pt-8 border-t border-white/5">
+                                        <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em]">Core Native Modules</p>
                                         <div className="flex flex-wrap gap-2">
                                             {ind.modules.map(mod => (
-                                                <span key={mod} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 text-slate-700 rounded-full text-xs font-bold border border-slate-100">
-                                                    <div className="w-1 h-1 rounded-full bg-violet-600" /> {mod}
+                                                <span key={mod} className="inline-flex items-center gap-2 px-4 py-2 bg-black/40 text-slate-400 rounded-full text-[10px] font-bold border border-white/5 group-hover:border-white/10 transition-colors">
+                                                    <div className="w-1 h-1 rounded-full bg-[#DFFF1B]" /> {mod}
                                                 </span>
                                             ))}
                                         </div>
                                     </div>
+                                </div>
+
+                                {/* Background Card Decoration */}
+                                <div className="absolute -bottom-10 -right-10 opacity-0 group-hover:opacity-5 transition-opacity duration-700">
+                                    <ind.icon size={200} className="text-white" />
                                 </div>
                             </motion.div>
                         ))}
@@ -84,42 +105,61 @@ export default function IndustriesMarketingPage() {
             </section>
 
             {/* Engine explanation */}
-            <section className="py-24 bg-slate-50">
-                <div className="max-w-5xl mx-auto px-4">
-                    <div className="bg-white rounded-[3.5rem] border border-slate-100 shadow-2xl p-12 md:p-20 overflow-hidden relative">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <section className="py-40 relative">
+                <div className="max-w-6xl mx-auto px-4">
+                    <div className="bg-[#1A1F2E]/20 backdrop-blur-3xl rounded-[4rem] border border-white/5 shadow-2xl p-12 md:p-24 overflow-hidden relative group">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
                             <div className="relative z-10">
-                                <span className="text-violet-600 font-black tracking-widest text-xs uppercase mb-4 inline-block italic">Engine Technology</span>
-                                <h2 className="text-4xl font-black text-slate-900 mb-8 tracking-tight leading-tight">Dynamic Industry Module Engine</h2>
-                                <p className="text-slate-500 text-lg font-medium leading-relaxed mb-8">
-                                    Unlike generic ERPs, Averqon adapts to you. When you sign up and select an industry, our template engine automatically:
+                                <span className="text-[#DFFF1B] font-black tracking-[0.5em] text-[10px] uppercase mb-6 inline-block italic">Operational Intelligence</span>
+                                <h2 className="text-5xl md:text-6xl font-black text-white mb-10 tracking-tighter uppercase italic leading-[0.9]">DYNAMIC <br /> INDUSTRY <br /> ENGINE v2</h2>
+                                <p className="text-slate-400 text-lg font-medium leading-relaxed mb-10 italic border-l-2 border-[#DFFF1B]/20 pl-8">
+                                    Averqon is not just an ERP. It's a foundational system that adapts. When you select an industry, our engine automates the entire vertical setup.
                                 </p>
-                                <ul className="space-y-4">
+                                <ul className="space-y-6">
                                     {[
-                                        { t: 'Activates industry-specific modules', i: Layers },
-                                        { t: 'Configures default dashboard widgets', i: LayoutDashboard },
-                                        { t: 'Sets up contextual terminology (e.g., Bookings vs Orders)', i: Zap },
-                                        { t: 'Loads pre-built reports and KPI trackers', i: CheckCircle2 }
+                                        { t: 'Activates specialized modules', i: Layers },
+                                        { t: 'Configures custom dashboard KPIs', i: LayoutDashboard },
+                                        { t: 'Sets up contextual terminology', i: Zap },
+                                        { t: 'Loads vertical-specific automations', i: CheckCircle2 }
                                     ].map((item, idx) => (
-                                        <li key={idx} className="flex gap-4">
-                                            <div className="mt-1 h-6 w-6 rounded-lg bg-violet-100 text-violet-600 flex items-center justify-center flex-shrink-0">
-                                                <item.i size={14} />
-                                            </div>
-                                            <span className="text-slate-800 font-bold text-sm tracking-tight">{item.t}</span>
-                                        </li>
+                                        <motion.li
+                                            key={idx}
+                                            initial={{ opacity: 0, x: -10 }}
+                                            whileInView={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: idx * 0.1 }}
+                                            className="flex gap-4 items-center"
+                                        >
+                                            <div className="h-2 w-8 bg-[#DFFF1B] rounded-full shadow-[0_0_15px_rgba(223,255,27,0.4)]" />
+                                            <span className="text-white font-black text-sm tracking-widest uppercase italic">{item.t}</span>
+                                        </motion.li>
                                     ))}
                                 </ul>
                             </div>
-                            <div className="hidden lg:block">
-                                <div className="p-8 bg-slate-900 rounded-[2.5rem] shadow-2xl skew-y-3 transform hover:skew-y-0 transition-transform duration-500">
-                                    <div className="space-y-4 opacity-50">
-                                        <div className="h-4 w-1/3 bg-white/20 rounded-full" />
-                                        <div className="h-4 w-2/3 bg-white/20 rounded-full" />
-                                        <div className="h-8 w-full bg-violet-500/20 rounded-xl" />
-                                        <div className="h-8 w-full bg-blue-500/20 rounded-xl" />
-                                        <div className="h-8 w-full bg-emerald-500/20 rounded-xl" />
+
+                            <div className="relative">
+                                <motion.div
+                                    animate={{ y: [0, -10, 0] }}
+                                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                                    className="p-12 bg-black/40 border border-white/5 rounded-[3.5rem] shadow-3xl backdrop-blur-xl relative z-10"
+                                >
+                                    <div className="space-y-6">
+                                        <div className="flex items-center justify-between">
+                                            <div className="h-4 w-1/3 bg-[#DFFF1B]/20 rounded-full" />
+                                            <div className="h-2 w-2 rounded-full bg-[#DFFF1B] animate-pulse" />
+                                        </div>
+                                        <div className="h-4 w-2/3 bg-white/5 rounded-full" />
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="h-24 bg-[#DFFF1B]/5 border border-white/5 rounded-2xl" />
+                                            <div className="h-24 bg-white/5 border border-white/5 rounded-2xl" />
+                                        </div>
+                                        <div className="h-10 w-full bg-[#DFFF1B] rounded-xl flex items-center justify-center">
+                                            <div className="h-2 w-12 bg-black/20 rounded-full" />
+                                        </div>
                                     </div>
-                                </div>
+                                </motion.div>
+
+                                {/* Background Decorative Blobs */}
+                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] h-[140%] bg-[#DFFF1B]/5 blur-[100px] rounded-full pointer-events-none" />
                             </div>
                         </div>
                     </div>

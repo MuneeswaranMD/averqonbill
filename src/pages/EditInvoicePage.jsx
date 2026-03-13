@@ -31,6 +31,7 @@ export default function EditInvoicePage() {
     const [customerName, setCustomerName] = useState('');
     const [customerPhone, setCustomerPhone] = useState('');
     const [customerAddress, setCustomerAddress] = useState('');
+    const [invoiceNumber, setInvoiceNumber] = useState('');
 
     /* Invoice fields */
     const [rows, setRows] = useState([empty_row()]);
@@ -40,6 +41,7 @@ export default function EditInvoicePage() {
     const [notes, setNotes] = useState('');
     const [invoiceDate, setInvoiceDate] = useState('');
     const [dueDate, setDueDate] = useState('');
+    const [selectedTemplate, setSelectedTemplate] = useState('classic');
 
     const [saving, setSaving] = useState(false);
     const [savedOk, setSavedOk] = useState(false);
@@ -59,6 +61,7 @@ export default function EditInvoicePage() {
             setCustomerName(inv.customerName || '');
             setCustomerPhone(inv.customerPhone || '');
             setCustomerAddress(inv.customerAddress || '');
+            setInvoiceNumber(inv.invoiceNumber || '');
             setStatus(inv.status || 'Draft');
             setDiscount(inv.discount != null ? String(inv.discount) : '');
             // Use saved taxPercent; fallback to settings GST rate
@@ -70,6 +73,7 @@ export default function EditInvoicePage() {
             setNotes(inv.notes || settings.footerNote || '');
             setInvoiceDate(inv.invoiceDate || '');
             setDueDate(inv.dueDate || '');
+            setSelectedTemplate(inv.template || settings.defaultTemplate || 'classic');
 
             if (inv.products && inv.products.length > 0) {
                 setRows(inv.products.map((p, i) => ({
@@ -136,6 +140,7 @@ export default function EditInvoicePage() {
                 invoiceDate,
                 dueDate,
                 notes,
+                template: selectedTemplate,
                 products: validRows.map(r => ({
                     name: r.name,
                     price: Number(r.price),
@@ -149,8 +154,9 @@ export default function EditInvoicePage() {
 
             if (generatePDF) {
                 generateInvoicePDF(
-                    { id, totalAmount: total, products: data.products },
-                    { name: customerName, address: customerAddress, phone: customerPhone }
+                    { id, totalAmount: total, products: data.products, template: selectedTemplate, invoiceNumber: invoiceNumber },
+                    { name: customerName, address: customerAddress, phone: customerPhone },
+                    selectedTemplate
                 );
             }
             setSavedOk(true);
@@ -342,9 +348,25 @@ export default function EditInvoicePage() {
                                 <input type="number" value={taxPercent} onChange={e => setTaxPercent(e.target.value)} className="flex-1 px-2 py-1 border border-gray-200 rounded text-sm text-right outline-none focus:border-blue-400" />
                             </div>
                         </div>
-                        <div className="flex justify-between text-base font-bold text-gray-900 pt-2">
+                        <div className="flex justify-between text-base font-bold text-gray-900 pt-2 pb-4 border-b border-gray-100">
                             <span>Total</span>
                             <span className="text-blue-700">{currSym}{fmt(total)}</span>
+                        </div>
+
+                        <div className="mt-4">
+                            <label className="block text-xs font-semibold text-gray-500 mb-1.5">Invoice Template</label>
+                            <select
+                                value={selectedTemplate}
+                                onChange={e => setSelectedTemplate(e.target.value)}
+                                className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400"
+                            >
+                                <option value="classic">Classic</option>
+                                <option value="modern">Modern</option>
+                                <option value="retail">Retail Receipt</option>
+                                <option value="minimal">Minimal</option>
+                                <option value="professional">Professional</option>
+                                <option value="crackers">Crackers Special</option>
+                            </select>
                         </div>
 
                         <div className="mt-6 space-y-2">

@@ -26,6 +26,7 @@ export default function EditEstimatePage() {
     const [customerName, setCustomerName] = useState('');
     const [customerPhone, setCustomerPhone] = useState('');
     const [customerAddress, setCustomerAddress] = useState('');
+    const [estimateNumber, setEstimateNumber] = useState('');
 
     /* Estimate fields */
     const [rows, setRows] = useState([empty_row()]);
@@ -35,6 +36,7 @@ export default function EditEstimatePage() {
     const [notes, setNotes] = useState('');
     const [estimateDate, setEstimateDate] = useState('');
     const [validUntil, setValidUntil] = useState('');
+    const [selectedTemplate, setSelectedTemplate] = useState('classic');
 
     const [saving, setSaving] = useState(false);
     const [savedOk, setSavedOk] = useState(false);
@@ -58,6 +60,8 @@ export default function EditEstimatePage() {
             setNotes(est.notes || '');
             setEstimateDate(est.estimateDate || '');
             setValidUntil(est.validUntil || '');
+            setEstimateNumber(est.estimateNumber || '');
+            setSelectedTemplate(est.template || 'classic');
 
             if (est.products && est.products.length > 0) {
                 setRows(est.products.map((p, i) => ({
@@ -121,14 +125,16 @@ export default function EditEstimatePage() {
                     qty: Number(r.qty || 1),
                     total: Number(r.price) * Number(r.qty || 1),
                 })),
+                template: selectedTemplate,
             };
 
             await FirestoreService.update('estimates', id, data);
 
             if (generatePDF) {
                 generateInvoicePDF(
-                    { id, totalAmount: total, products: data.products },
-                    { name: customerName, address: customerAddress, phone: customerPhone }
+                    { id, totalAmount: total, products: data.products, template: selectedTemplate, invoiceNumber: estimateNumber },
+                    { name: customerName, address: customerAddress, phone: customerPhone },
+                    selectedTemplate
                 );
             }
             setSavedOk(true);
@@ -320,9 +326,25 @@ export default function EditEstimatePage() {
                                 <input type="number" value={taxPercent} onChange={e => setTaxPercent(e.target.value)} className="flex-1 px-2 py-1 border border-gray-200 rounded text-sm text-right outline-none focus:border-blue-400" />
                             </div>
                         </div>
-                        <div className="flex justify-between text-base font-bold text-gray-900 pt-2">
+                        <div className="flex justify-between text-base font-bold text-gray-900 pt-2 pb-4 border-b border-gray-100">
                             <span>Total</span>
                             <span className="text-blue-700">₹{fmt(total)}</span>
+                        </div>
+
+                        <div className="mt-4">
+                            <label className="block text-xs font-semibold text-gray-500 mb-1.5">Estimate Template</label>
+                            <select
+                                value={selectedTemplate}
+                                onChange={e => setSelectedTemplate(e.target.value)}
+                                className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400"
+                            >
+                                <option value="classic">Classic</option>
+                                <option value="modern">Modern</option>
+                                <option value="retail">Retail Receipt</option>
+                                <option value="minimal">Minimal</option>
+                                <option value="professional">Professional</option>
+                                <option value="crackers">Crackers Special</option>
+                            </select>
                         </div>
 
                         <div className="mt-6 space-y-2">

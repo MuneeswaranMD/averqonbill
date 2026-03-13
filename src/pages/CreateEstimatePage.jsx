@@ -370,6 +370,7 @@ export default function CreateEstimatePage() {
                                     <option value="retail">Retail Receipt</option>
                                     <option value="minimal">Minimal</option>
                                     <option value="professional">Professional</option>
+                                    <option value="crackers">Crackers Special</option>
                                 </select>
                             </div>
                             <button onClick={() => handleSave(true)} disabled={saving} className="w-full py-3 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
