@@ -18,6 +18,7 @@ const WEBHOOK_BASE_URL = 'https://averqonbill-1.onrender.com/api/webhook';
 export default function IntegrationsPage() {
     const { companyId } = useAuth();
     const [integrations, setIntegrations] = useState([]);
+    const [orderCount, setOrderCount] = useState(0);
     const [loading, setLoading] = useState(true);
     const [modal, setModal] = useState(null);
     const [form, setForm] = useState({ storeName: '' });
@@ -25,21 +26,36 @@ export default function IntegrationsPage() {
     const [syncing, setSyncing] = useState(null);
 
     useEffect(() => {
-        if (companyId) loadIntegrations();
+        if (companyId) {
+            loadIntegrations();
+            loadOrderCount();
+        }
     }, [companyId]);
 
     const loadIntegrations = async () => {
-        setLoading(true);
         try {
             const resp = await fetch(`${API_BASE_URL}/integrations/${companyId}`);
             const data = await resp.json();
             setIntegrations(data);
         } catch (e) {
-            toast.error('Failed to load integrations');
+            console.error(e);
+        }
+    };
+
+    const loadOrderCount = async () => {
+        try {
+            const resp = await fetch(`${API_BASE_URL}/orders/${companyId}`);
+            const data = await resp.json();
+            setOrderCount(data.length);
+        } catch (e) {
+            console.error(e);
         } finally {
             setLoading(false);
         }
     };
+
+    const systemHealth = integrations.length === 0 ? '100%' :
+        `${Math.round((integrations.filter(i => i.status !== 'error').length / integrations.length) * 100)}%`;
 
     const handleConnect = (platform) => {
         const initialForm = { storeName: platform.name };
@@ -130,8 +146,8 @@ export default function IntegrationsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 {[
                     { label: 'Active Channels', value: integrations.length, icon: Globe, color: 'indigo' },
-                    { label: 'Orders Synced', value: '4.2k', icon: RefreshCw, color: 'emerald' },
-                    { label: 'System Health', value: '100%', icon: CheckCircle2, color: 'blue' },
+                    { label: 'Orders Synced', value: orderCount.toLocaleString(), icon: RefreshCw, color: 'emerald' },
+                    { label: 'System Health', value: systemHealth, icon: CheckCircle2, color: 'blue' },
                 ].map((s, i) => (
                     <div key={i} className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex items-center justify-between">
                         <div>
