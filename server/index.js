@@ -12,6 +12,7 @@ import { syncShopifyOrders, syncShopifyProducts } from './integrations/shopify.j
 import { syncWooCommerceOrders, syncWooCommerceProducts } from './integrations/woocommerce.js';
 import { updateStockFromOrder } from './services/stockService.js';
 import { pushInventoryToPlatform } from './services/inventoryPush.js';
+import { pushOrderStatusToPlatform } from './services/orderPush.js';
 
 dotenv.config();
 
@@ -330,6 +331,27 @@ app.post('/api/webhook/products/:platform/:companyId', async (req, res) => {
     } catch (err) {
         console.error('Product Webhook Error:', err.message);
         res.status(500).send('Server Error');
+    }
+});
+app.post('/api/orders/:id/update-status', async (req, res) => {
+    const { id } = req.params;
+    const { status, companyId } = req.body;
+
+    try {
+        const order = await Order.findById(id);
+        if (!order) return res.status(404).send('Order not found');
+
+        order.status = status;
+        await order.save();
+
+        if (order.platform) {
+            await pushOrderStatusToPlatform(companyId, id, status);
+        }
+
+        res.json({ success: true, status });
+    } catch (err) {
+        console.error(`[Status Update Error]`, err);
+        res.status(500).json({ error: err.message });
     }
 });
 

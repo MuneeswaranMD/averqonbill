@@ -390,10 +390,24 @@ export default function OrdersPage() {
     const handleStatusChange = async (id, status) => {
         try {
             await FirestoreService.update('orders', id, { status });
+
+            const order = orders.find(o => o.id === id);
+            if (order && order.platform) {
+                try {
+                    await fetch(`https://averqonbill-1.onrender.com/api/orders/${order._id || id}/update-status`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status, companyId })
+                    });
+                } catch (err) {
+                    console.error('Failed to sync status to platform:', err);
+                }
+            }
+
             setOrders(p => p.map(o => o.id === id ? { ...o, status } : o));
             if (drawer?.id === id) setDrawer(prev => ({ ...prev, status }));
 
-            // 3. Trigger Automation
+            // Trigger Automation
             AutomationService.trigger(companyId, 'order.status_updated', { id, status });
         } catch (e) { console.error(e); }
     };
