@@ -5,9 +5,11 @@ import dotenv from 'dotenv';
 import dns from 'dns';
 import { transformOrder } from './services/orderTransformer.js';
 import Order from './models/Order.js';
+import Product from './models/Product.js';
 import Integration from './models/Integration.js';
 import { verifyShopifyWebhook, verifyWooCommerceWebhook } from './integrations/security.js';
-import { syncShopifyOrders } from './integrations/shopify.js';
+import { syncShopifyOrders, syncShopifyProducts } from './integrations/shopify.js';
+import { syncWooCommerceOrders, syncWooCommerceProducts } from './integrations/woocommerce.js';
 
 dotenv.config();
 
@@ -122,8 +124,33 @@ app.post('/api/integrations/:id/sync', async (req, res) => {
     let result;
     if (int.platform === 'shopify') {
       result = await syncShopifyOrders(int);
+    } else if (int.platform === 'woocommerce') {
+      result = await syncWooCommerceOrders(int);
     } else {
       return res.status(400).send('Platform not supported for manual sync');
+    }
+
+    int.health.lastSync = new Date();
+    await int.save();
+
+    res.json({ success: true, ...result });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/integrations/:id/sync-products', async (req, res) => {
+  try {
+    const int = await Integration.findById(req.params.id);
+    if (!int) return res.status(404).send('Integration not found');
+
+    let result;
+    if (int.platform === 'shopify') {
+      result = await syncShopifyProducts(int);
+    } else if (int.platform === 'woocommerce') {
+      result = await syncWooCommerceProducts(int);
+    } else {
+      return res.status(400).send('Platform not supported for product sync');
     }
 
     int.health.lastSync = new Date();
@@ -212,6 +239,15 @@ app.get('/api/orders/:companyId', async (req, res) => {
     try {
         const orders = await Order.find({ companyId: req.params.companyId }).sort({ createdAt: -1 });
         res.json(orders);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/products/:companyId', async (req, res) => {
+    try {
+        const products = await Product.find({ companyId: req.params.companyId }).sort({ createdAt: -1 });
+        res.json(products);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

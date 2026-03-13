@@ -109,8 +109,27 @@ export default function IntegrationsPage() {
             if (data.success) {
                 toast.success(`Sync complete: ${data.synced} new orders`);
                 await loadIntegrations();
+                await loadOrderCount();
             } else {
                 throw new Error(data.error || 'Sync failed');
+            }
+        } catch (e) {
+            toast.error(e.message);
+        } finally {
+            setSyncing(null);
+        }
+    };
+
+    const runProductSync = async (int) => {
+        setSyncing(int._id + '_prod');
+        try {
+            const resp = await fetch(`${API_BASE_URL}/integrations/${int._id}/sync-products`, { method: 'POST' });
+            const data = await resp.json();
+            if (data.success) {
+                toast.success(`Product sync complete: ${data.synced} items imported`);
+                await loadIntegrations();
+            } else {
+                throw new Error(data.error || 'Product sync failed');
             }
         } catch (e) {
             toast.error(e.message);
@@ -245,15 +264,25 @@ export default function IntegrationsPage() {
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-1">
-                                        {int.platform === 'shopify' && (
-                                            <button
-                                                onClick={() => runSync(int)}
-                                                disabled={syncing === int._id}
-                                                className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
-                                                title="Manual Sync"
-                                            >
-                                                <RefreshCw size={14} className={syncing === int._id ? 'animate-spin' : ''} />
-                                            </button>
+                                        {(int.platform === 'shopify' || int.platform === 'woocommerce') && (
+                                            <>
+                                                <button
+                                                    onClick={() => runSync(int)}
+                                                    disabled={syncing === int._id}
+                                                    className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                                                    title="Sync Orders"
+                                                >
+                                                    <RefreshCw size={14} className={syncing === int._id ? 'animate-spin' : ''} />
+                                                </button>
+                                                <button
+                                                    onClick={() => runProductSync(int)}
+                                                    disabled={syncing === int._id + '_prod'}
+                                                    className="p-2 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
+                                                    title="Sync Products"
+                                                >
+                                                    <Package size={14} className={syncing === int._id + '_prod' ? 'animate-spin' : ''} />
+                                                </button>
+                                            </>
                                         )}
                                         <button
                                             onClick={() => disconnect(int._id)}

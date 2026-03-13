@@ -209,13 +209,40 @@ export default function StockPage() {
     useEffect(() => {
         if (!companyId) return;
 
+        // 1. Real-time Firestore sync
         const q = query(
             collection(db, 'products'),
             where('companyId', '==', companyId),
             orderBy('createdAt', 'desc')
         );
-        const unsub = onSnapshot(q, snap => {
-            setProducts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        const unsub = onSnapshot(q, async (snap) => {
+            const firestoreProds = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+            // 2. Fetch Backend products
+            let backendProds = [];
+            try {
+                const resp = await fetch(`https://averqonbill-1.onrender.com/api/products/${companyId}`);
+                if (resp.ok) {
+                    const data = await resp.json();
+                    backendProds = data.map(p => ({
+                        id: p._id,
+                        name: p.name,
+                        sku: p.sku || p.externalId,
+                        price: p.price,
+                        stock: p.stock,
+                        category: p.category || 'Integrated',
+                        source: p.platform,
+                        ...p
+                    }));
+                }
+            } catch (err) { console.warn('Backend products load error:', err); }
+
+            // 3. Unify
+            const combined = [...firestoreProds, ...backendProds].sort((a, b) =>
+                new Date(b.createdAt || b.updatedAt) - new Date(a.createdAt || a.updatedAt)
+            );
+
+            setProducts(combined);
             setLoading(false);
         });
 
