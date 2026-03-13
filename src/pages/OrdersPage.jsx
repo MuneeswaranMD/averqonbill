@@ -187,21 +187,43 @@ function OrderDrawer({ order, onClose, onEdit, onDelete, onStatusChange, onPayme
                         </div>
                     </div>
 
-                    {/* Product */}
+                    {/* Products */}
                     <div className="bg-gray-50 rounded-xl p-4">
                         <p className="text-xs font-semibold text-gray-400 mb-3">Products</p>
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <Package size={15} className="text-gray-400" />
-                                <span className="text-sm text-gray-900">{order.productName || '—'}</span>
-                            </div>
-                            {order.quantity && (
-                                <span className="text-sm text-gray-500">x{order.quantity}</span>
+                        <div className="space-y-3">
+                            {order.items && order.items.length > 0 ? (
+                                order.items.map((item, idx) => (
+                                    <div key={idx} className="flex items-center justify-between pb-2 border-b border-gray-100 last:border-0 last:pb-0">
+                                        <div className="flex items-center gap-2">
+                                            <Package size={14} className="text-gray-400 flex-shrink-0" />
+                                            <div>
+                                                <p className="text-sm text-gray-900 font-medium line-clamp-1">{item.name}</p>
+                                                {item.sku && <p className="text-[10px] text-gray-400 font-mono">{item.sku}</p>}
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-xs text-gray-900 font-bold">₹{item.price?.toLocaleString()}</p>
+                                            <p className="text-[10px] text-gray-500">x{item.qty}</p>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Package size={15} className="text-gray-400" />
+                                        <span className="text-sm text-gray-900 font-medium">{order.productName || '—'}</span>
+                                    </div>
+                                    {order.quantity && (
+                                        <span className="text-sm text-gray-500">x{order.quantity}</span>
+                                    )}
+                                </div>
                             )}
                         </div>
-                        <div className="mt-3 pt-3 border-t border-gray-200 flex items-center justify-between">
-                            <span className="text-sm font-semibold text-gray-700">Total Amount</span>
-                            <span className="text-lg font-bold text-gray-900">₹{Number(order.totalAmount || 0).toLocaleString()}</span>
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-700">Total Amount</span>
+                                <span className="text-lg font-bold text-gray-900">₹{Number(order.totalAmount || 0).toLocaleString()}</span>
+                            </div>
                         </div>
                     </div>
 
@@ -547,7 +569,12 @@ export default function OrdersPage() {
                                             </div>
                                         </td>
                                         <td className="px-4 py-3.5 text-gray-600 text-xs">
-                                            {o.productName ? (
+                                            {o.items && o.items.length > 0 ? (
+                                                <span title={o.items.map(i => i.name).join(', ')} className="truncate max-w-[120px] block">
+                                                    {o.items[0].name}
+                                                    {o.items.length > 1 && ` +${o.items.length - 1} more`}
+                                                </span>
+                                            ) : o.productName ? (
                                                 <span title={o.productName} className="truncate max-w-[120px] block">
                                                     {o.quantity ? `${o.quantity}x ` : ''}{o.productName}
                                                 </span>

@@ -21,13 +21,16 @@ export const generateInvoicePDF = (order, customer, templateId = 'classic') => {
 
     const data = {
         invoiceNo: order.invoiceNumber || `INV-${String(order.id).slice(-6).toUpperCase()}`,
-        date: new Date(order.invoiceDate || order.createdAt?.seconds * 1000 || Date.now()).toLocaleDateString(),
+        date: new Date(order.invoiceDate || order.createdAt?.seconds * 1000 || order.date || Date.now()).toLocaleDateString(),
         dueDate: order.dueDate || 'N/A',
         customer: {
-            name: customer.name || order.customerName || 'N/A',
-            address: customer.address || order.customerAddress || 'N/A',
-            phone: customer.phone || order.customerPhone || 'N/A',
-            email: customer.email || order.customerEmail || '',
+            name: customer.name || order.customerName || order.customer?.name || 'N/A',
+            address: customer.address || order.customerAddress || 
+                     (order.customer?.billingAddress ? 
+                        `${order.customer.billingAddress.address1}, ${order.customer.billingAddress.city}, ${order.customer.billingAddress.country}` : 
+                        'N/A'),
+            phone: customer.phone || order.customerPhone || order.customer?.phone || 'N/A',
+            email: customer.email || order.customerEmail || order.customer?.email || '',
         },
         company: {
             name: order.companyName || 'AVERQON BILL',
@@ -36,14 +39,14 @@ export const generateInvoicePDF = (order, customer, templateId = 'classic') => {
             gstin: order.companyGSTIN || '33AAAAA0000A1Z5',
             logoUrl: order.logoUrl || null,
         },
-        items: order.products || [],
-        subtotal: order.subtotal || order.totalAmount,
-        tax: order.tax || 0,
-        discount: order.discount || 0,
-        total: order.totalAmount || order.amount,
+        items: order.items || order.products || [],
+        subtotal: order.pricing?.subtotal || order.subtotal || order.totalAmount,
+        tax: order.pricing?.totalTax || order.tax || 0,
+        discount: order.pricing?.totalDiscounts || order.discount || 0,
+        shipping: order.pricing?.shippingTotal || 0,
+        total: order.totalAmount || order.amount || 0,
         footer: order.footerNote || 'Thank you for your business!',
-        // jsPDF built-in fonts don't support the ₹ Unicode glyph — use 'Rs.' for all templates
-        currency: (order.currencySymbol || 'Rs.').replace('₹', 'Rs.').replace('\u20B9', 'Rs.'),
+        currency: (order.currencySymbol || order.currency || 'Rs.').replace('₹', 'Rs.').replace('\u20B9', 'Rs.'),
     };
 
     switch (templateId) {
