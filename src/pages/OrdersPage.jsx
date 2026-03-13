@@ -477,16 +477,23 @@ export default function OrdersPage() {
     const handleSave = async (data) => {
         try {
             if (modal.item?.id) {
-                await FirestoreService.update('orders', modal.item.id, data);
+                const isBackend = modal.item.platform || modal.item.source;
+                if (isBackend) {
+                    const resp = await fetch(`https://averqonbill-1.onrender.com/api/orders/${modal.item._id || modal.item.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                    if (!resp.ok) throw new Error('Backend update failed');
+                } else {
+                    await FirestoreService.update('orders', modal.item.id, data);
+                }
                 setOrders(p => p.map(o => o.id === modal.item.id ? { ...o, ...data } : o));
-                // Update drawer if open
                 if (drawer?.id === modal.item.id) setDrawer(prev => ({ ...prev, ...data }));
             } else {
                 const ref = await FirestoreService.add('orders', data, companyId);
                 const newOrder = { id: ref.id, ...data, companyId };
                 setOrders(p => [newOrder, ...p]);
-
-                // 3. Trigger Automation
                 AutomationService.trigger(companyId, 'order.created', newOrder);
             }
             setModal({ open: false, item: null });
@@ -494,10 +501,18 @@ export default function OrdersPage() {
     };
 
     const handleDelete = async (id) => {
+        const order = orders.find(o => o.id === id);
+        if (!order) return;
         setDeleting(id);
         setDrawer(null);
         try {
-            await FirestoreService.delete('orders', id);
+            const isBackend = order.platform || order.source;
+            if (isBackend) {
+                const resp = await fetch(`https://averqonbill-1.onrender.com/api/orders/${order._id || id}`, { method: 'DELETE' });
+                if (!resp.ok) throw new Error('Backend delete failed');
+            } else {
+                await FirestoreService.delete('orders', id);
+            }
             setOrders(p => p.filter(o => o.id !== id));
         } catch (e) { alert('Delete failed: ' + e.message); }
         finally { setDeleting(null); }
@@ -505,36 +520,47 @@ export default function OrdersPage() {
 
     const handleStatusChange = async (id, status) => {
         try {
-            await FirestoreService.update('orders', id, { status });
-
             const order = orders.find(o => o.id === id);
-            if (order && order.platform) {
-                try {
-                    await fetch(`https://averqonbill-1.onrender.com/api/orders/${order._id || id}/update-status`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ status, companyId })
-                    });
-                } catch (err) {
-                    console.error('Failed to sync status to platform:', err);
-                }
+            if (!order) return;
+
+            const isBackend = order.platform || order.source;
+            if (isBackend) {
+                const resp = await fetch(`https://averqonbill-1.onrender.com/api/orders/${order._id || id}/update-status`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status, companyId })
+                });
+                if (!resp.ok) throw new Error('Backend status update failed');
+            } else {
+                await FirestoreService.update('orders', id, { status });
             }
 
             setOrders(p => p.map(o => o.id === id ? { ...o, status } : o));
             if (drawer?.id === id) setDrawer(prev => ({ ...prev, status }));
-
-            // Trigger Automation
             AutomationService.trigger(companyId, 'order.status_updated', { id, status });
         } catch (e) { console.error(e); }
     };
 
     const handlePaymentChange = async (id, payment) => {
         try {
-            await FirestoreService.update('orders', id, { payment });
+            const order = orders.find(o => o.id === id);
+            if (!order) return;
+
+            const isBackend = order.platform || order.source;
+            if (isBackend) {
+                const resp = await fetch(`https://averqonbill-1.onrender.com/api/orders/${order._id || id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ paymentStatus: payment })
+                });
+                if (!resp.ok) throw new Error('Backend payment update failed');
+            } else {
+                await FirestoreService.update('orders', id, { payment });
+            }
+
             setOrders(p => p.map(o => o.id === id ? { ...o, payment } : o));
             if (drawer?.id === id) setDrawer(prev => ({ ...prev, payment }));
 
-            // 3. Trigger Automation
             if (payment === 'Paid') {
                 AutomationService.trigger(companyId, 'payment.received', { id, type: 'order' });
             }

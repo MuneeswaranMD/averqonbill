@@ -199,7 +199,17 @@ export default function ProductsPage() {
     const handleSave = async (data) => {
         try {
             if (modal.item?.id) {
-                await FirestoreService.update('products', modal.item.id, data);
+                const isBackend = modal.item.platform;
+                if (isBackend) {
+                    const resp = await fetch(`https://averqonbill-1.onrender.com/api/products/${modal.item._id || modal.item.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ...data, companyId })
+                    });
+                    if (!resp.ok) throw new Error('Backend sync failed');
+                } else {
+                    await FirestoreService.update('products', modal.item.id, data);
+                }
                 setProducts(prev => prev.map(p => p.id === modal.item.id ? { ...p, ...data } : p));
             } else {
                 const ref = await FirestoreService.add('products', data, companyId);
@@ -212,7 +222,15 @@ export default function ProductsPage() {
     const handleDelete = async () => {
         setDeleteModal(d => ({ ...d, loading: true }));
         try {
-            await FirestoreService.delete('products', deleteModal.item.id);
+            const isBackend = deleteModal.item.platform;
+            if (isBackend) {
+                const resp = await fetch(`https://averqonbill-1.onrender.com/api/products/${deleteModal.item._id || deleteModal.item.id}`, {
+                    method: 'DELETE'
+                });
+                if (!resp.ok) throw new Error('Backend delete failed');
+            } else {
+                await FirestoreService.delete('products', deleteModal.item.id);
+            }
             setProducts(prev => prev.filter(p => p.id !== deleteModal.item.id));
             setDeleteModal({ open: false, item: null, loading: false });
         } catch (e) {
@@ -358,7 +376,7 @@ export default function ProductsPage() {
                                                         <p className="text-xs text-gray-400 font-mono">#{p.id.slice(-6)}</p>
                                                         {p.platform && (
                                                             <span className={`px-1 rounded-[4px] text-[8px] font-black uppercase tracking-tighter border ${p.platform === 'shopify' ? 'bg-[#95BF47]/10 text-[#95BF47] border-[#95BF47]/20' :
-                                                                    'bg-[#96588A]/10 text-[#96588A] border-[#96588A]/20'
+                                                                'bg-[#96588A]/10 text-[#96588A] border-[#96588A]/20'
                                                                 }`}>
                                                                 {p.platform}
                                                             </span>

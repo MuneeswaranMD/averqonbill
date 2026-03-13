@@ -13,6 +13,7 @@ import { syncWooCommerceOrders, syncWooCommerceProducts } from './integrations/w
 import { updateStockFromOrder } from './services/stockService.js';
 import { pushInventoryToPlatform } from './services/inventoryPush.js';
 import { pushOrderStatusToPlatform } from './services/orderPush.js';
+import { pushProductToPlatform } from './services/productPush.js';
 
 dotenv.config();
 
@@ -258,6 +259,32 @@ app.post('/api/webhook/:platform/:companyId', async (req, res) => {
     }
 });
 
+app.put('/api/products/:id', async (req, res) => {
+    const { companyId, ...updateData } = req.body;
+    try {
+        const product = await Product.findByIdAndUpdate(req.params.id, updateData, { new: true });
+        if (!product) return res.status(404).json({ error: 'Product not found' });
+
+        // Push to external platform if integrated
+        if (product.platform && product.externalId) {
+            await pushProductToPlatform(companyId, product._id, updateData);
+        }
+
+        res.json(product);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/products/:id', async (req, res) => {
+    try {
+        await Product.findByIdAndDelete(req.params.id);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.post('/api/products/:id/adjust-stock', async (req, res) => {
     const { qty, companyId } = req.body;
     try {
@@ -291,6 +318,16 @@ app.get('/api/products/:companyId', async (req, res) => {
     try {
         const products = await Product.find({ companyId: req.params.companyId }).sort({ createdAt: -1 });
         res.json(products);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/orders/:id', async (req, res) => {
+    try {
+        const order = await Order.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        if (!order) return res.status(404).json({ error: 'Order not found' });
+        res.json(order);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
