@@ -9,7 +9,8 @@ export const syncShopifyOrders = async (integration) => {
     const { storeUrl, accessToken } = integration.credentials;
     if (!storeUrl || !accessToken) throw new Error('Missing Shopify credentials');
 
-    const cleanUrl = storeUrl.startsWith('http') ? storeUrl : `https://${storeUrl}`;
+    const cleanUrl = storeUrl ? (storeUrl.startsWith('http') ? storeUrl : `https://${storeUrl}`) : '';
+    if (!cleanUrl) throw new Error('Invalid Shopify Store URL');
     const endpoint = `${cleanUrl.replace(/\/$/, '')}/admin/api/2023-10/orders.json?status=any&limit=50`;
 
     try {
@@ -44,7 +45,8 @@ export const syncShopifyProducts = async (integration) => {
     const { storeUrl, accessToken } = integration.credentials;
     if (!storeUrl || !accessToken) throw new Error('Missing Shopify credentials');
 
-    const cleanUrl = storeUrl.startsWith('http') ? storeUrl : `https://${storeUrl}`;
+    const cleanUrl = storeUrl ? (storeUrl.startsWith('http') ? storeUrl : `https://${storeUrl}`) : '';
+    if (!cleanUrl) throw new Error('Invalid Shopify Store URL');
     const endpoint = `${cleanUrl.replace(/\/$/, '')}/admin/api/2023-10/products.json?limit=50`;
 
     try {
@@ -71,6 +73,7 @@ export const syncShopifyProducts = async (integration) => {
         }
         return results;
     } catch (err) {
+        console.error('Shopify Sync Exception:', err.response?.data || err.message);
         throw new Error(`Shopify Product Sync Error: ${err.response?.statusText || err.message}`);
     }
 };

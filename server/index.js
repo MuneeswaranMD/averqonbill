@@ -126,6 +126,7 @@ app.post('/api/integrations/:id/sync', async (req, res) => {
     const int = await Integration.findById(req.params.id);
     if (!int) return res.status(404).send('Integration not found');
 
+    console.log(`[Sync] Triggering Order Sync for ${int.platform} - ${int.storeName}`);
     let result;
     if (int.platform === 'shopify') {
       result = await syncShopifyOrders(int);
@@ -135,20 +136,27 @@ app.post('/api/integrations/:id/sync', async (req, res) => {
       return res.status(400).send('Platform not supported for manual sync');
     }
 
+    if (!int.health) int.health = {};
     int.health.lastSync = new Date();
     await int.save();
 
     res.json({ success: true, ...result });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(`[Sync Error] Order sync failed:`, err);
+    res.status(500).json({ error: err.message, stack: err.stack });
   }
 });
 
 app.post('/api/integrations/:id/sync-products', async (req, res) => {
   try {
     const int = await Integration.findById(req.params.id);
-    if (!int) return res.status(404).send('Integration not found');
+    if (!int) {
+      console.warn(`[Product Sync] Integration not found: ${req.params.id}`);
+      return res.status(404).send('Integration not found');
+    }
 
+    console.log(`[Product Sync] Starting for ${int.platform} - ${int.storeName} (${int._id})`);
+    
     let result;
     if (int.platform === 'shopify') {
       result = await syncShopifyProducts(int);
@@ -158,12 +166,15 @@ app.post('/api/integrations/:id/sync-products', async (req, res) => {
       return res.status(400).send('Platform not supported for product sync');
     }
 
+    if (!int.health) int.health = {};
     int.health.lastSync = new Date();
     await int.save();
 
+    console.log(`[Product Sync] SUCCESS for ${int.storeName}:`, result);
     res.json({ success: true, ...result });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(`[Product Sync Error] Failed for ${req.params.id}:`, err);
+    res.status(500).json({ error: err.message, stack: err.stack });
   }
 });
 

@@ -7,7 +7,8 @@ import { updateStockFromOrder } from '../services/stockService.js';
 
 export const syncWooCommerceOrders = async (integration) => {
     const { storeUrl, consumerKey, consumerSecret } = integration.credentials;
-    const cleanUrl = storeUrl.startsWith('http') ? storeUrl : `https://${storeUrl}`;
+    const cleanUrl = storeUrl ? (storeUrl.startsWith('http') ? storeUrl : `https://${storeUrl}`) : '';
+    if (!cleanUrl) throw new Error('Invalid WooCommerce Store URL');
     const endpoint = `${cleanUrl.replace(/\/$/, '')}/wp-json/wc/v3/orders?per_page=50`;
 
     try {
@@ -40,7 +41,8 @@ export const syncWooCommerceOrders = async (integration) => {
 
 export const syncWooCommerceProducts = async (integration) => {
     const { storeUrl, consumerKey, consumerSecret } = integration.credentials;
-    const cleanUrl = storeUrl.startsWith('http') ? storeUrl : `https://${storeUrl}`;
+    const cleanUrl = storeUrl ? (storeUrl.startsWith('http') ? storeUrl : `https://${storeUrl}`) : '';
+    if (!cleanUrl) throw new Error('Invalid WooCommerce Store URL');
     const endpoint = `${cleanUrl.replace(/\/$/, '')}/wp-json/wc/v3/products?per_page=50`;
 
     try {
@@ -66,6 +68,7 @@ export const syncWooCommerceProducts = async (integration) => {
         }
         return results;
     } catch (err) {
+        console.error('WooCommerce Sync Exception:', err.response?.data || err.message);
         throw new Error(`WooCommerce Product Sync Error: ${err.response?.statusText || err.message}`);
     }
 };
