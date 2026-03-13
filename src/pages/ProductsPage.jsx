@@ -171,7 +171,27 @@ export default function ProductsPage() {
 
     const load = async () => {
         setLoading(true); setError(null);
-        try { setProducts(await FirestoreService.getProducts(companyId)); }
+        try {
+            const firestoreProducts = await FirestoreService.getProducts(companyId);
+            let backendProducts = [];
+            try {
+                const resp = await fetch(`https://averqonbill-1.onrender.com/api/products/${companyId}`);
+                if (resp.ok) backendProducts = await resp.json();
+            } catch (err) { console.warn('Backend products failed to load', err); }
+
+            const normalizedBackend = backendProducts.map(p => ({
+                id: p._id,
+                ...p,
+                image: p.images?.[0] || '',
+            }));
+
+            // Combine and sort by name
+            const combined = [...firestoreProducts, ...normalizedBackend].sort((a, b) =>
+                (a.name || '').localeCompare(b.name || '')
+            );
+
+            setProducts(combined);
+        }
         catch (e) { setError(e.message); }
         finally { setLoading(false); }
     };
@@ -334,7 +354,16 @@ export default function ProductsPage() {
 
                                                 <div>
                                                     <p className="text-sm font-medium text-gray-900">{p.name}</p>
-                                                    <p className="text-xs text-gray-400 font-mono">#{p.id.slice(-6)}</p>
+                                                    <div className="flex items-center gap-2 mt-0.5">
+                                                        <p className="text-xs text-gray-400 font-mono">#{p.id.slice(-6)}</p>
+                                                        {p.platform && (
+                                                            <span className={`px-1 rounded-[4px] text-[8px] font-black uppercase tracking-tighter border ${p.platform === 'shopify' ? 'bg-[#95BF47]/10 text-[#95BF47] border-[#95BF47]/20' :
+                                                                    'bg-[#96588A]/10 text-[#96588A] border-[#96588A]/20'
+                                                                }`}>
+                                                                {p.platform}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </td>

@@ -428,7 +428,16 @@ export default function StockPage() {
                                                 {p.name.slice(0, 1).toUpperCase()}
                                             </div>
                                             <div>
-                                                <p className="text-sm font-semibold text-gray-900 leading-none">{p.name}</p>
+                                                <div className="flex items-center gap-2">
+                                                    <p className="text-sm font-semibold text-gray-900 leading-none">{p.name}</p>
+                                                    {p.platform && (
+                                                        <span className={`px-1 rounded-[4px] text-[8px] font-black uppercase tracking-tighter border ${p.platform === 'shopify' ? 'bg-[#95BF47]/10 text-[#95BF47] border-[#95BF47]/20' :
+                                                                'bg-[#96588A]/10 text-[#96588A] border-[#96588A]/20'
+                                                            }`}>
+                                                            {p.platform}
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 <p className="text-[11px] text-gray-400 mt-1 font-mono">{p.sku || '--'}</p>
                                             </div>
                                         </div>
