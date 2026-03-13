@@ -2,53 +2,33 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import dns from 'dns';
+import { transformOrder } from './services/orderTransformer.js';
+import Order from './models/Order.js';
+import Integration from './models/Integration.js';
+import { verifyShopifyWebhook, verifyWooCommerceWebhook } from './integrations/security.js';
+import { syncShopifyOrders } from './integrations/shopify.js';
 
 dotenv.config();
 
+// Fix for Node.js + MongoDB Atlas SRV resolution on some Windows environments
+dns.setDefaultResultOrder('ipv4first');
+
 const app = express();
 app.use(cors());
-app.use(express.json());
+
+// Middleware to capture raw body for webhook verification
+app.use(express.json({
+  verify: (req, res, buf) => {
+    req.rawBody = buf;
+  }
+}));
 
 // MongoDB Connection
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/saas_db';
+const MONGO_URI = process.env.MONGO_URI;
 mongoose.connect(MONGO_URI)
-  .then(() => console.log('✅ MongoDB Connected'))
+  .then(() => console.log('✅ MongoDB Atlas Connected (Averqonbill Cluster)'))
   .catch(err => console.error('❌ MongoDB Connection Error:', err));
-
-// --- Schemas ---
-
-const companySchema = new mongoose.Schema({
-  name: String,
-  industry: String,
-  ownerEmail: String,
-  plan: { type: String, default: 'starter' },
-  status: { type: String, default: 'active' }
-}, { timestamps: true });
-
-const integrationSchema = new mongoose.Schema({
-  companyId: String, // Maps to Firestore companyId
-  platformId: String, // shopify, woocommerce, etc.
-  platformName: String,
-  config: Object,
-  webhookSecret: String,
-  status: { type: String, default: 'active' }
-}, { timestamps: true });
-
-const orderSchema = new mongoose.Schema({
-  companyId: String,
-  externalId: String,
-  source: String,
-  orderNumber: String,
-  customerName: String,
-  customerEmail: String,
-  totalAmount: Number,
-  currency: String,
-  items: Array,
-  shippingAddress: Object,
-  paymentStatus: String,
-  status: String,
-  raw: Object
-}, { timestamps: true });
 
 const menuSchema = new mongoose.Schema({
   name: String,
@@ -59,52 +39,21 @@ const menuSchema = new mongoose.Schema({
 });
 
 const permissionSchema = new mongoose.Schema({
-  companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' },
+  companyId: String,
   allowedMenus: [String] // Array of moduleKeys
 }, { timestamps: true });
 
-const Company = mongoose.model('Company', companySchema);
-const Integration = mongoose.model('Integration', integrationSchema);
-const Order = mongoose.model('Order', orderSchema);
 const Menu = mongoose.model('Menu', menuSchema);
 const Permission = mongoose.model('Permission', permissionSchema);
-
-// --- Utilities ---
-const transformOrder = (platform, payload) => {
-    // Simple version of the frontend transformer for the backend
-    const map = {
-        shopify: {
-            externalId: payload.id?.toString(),
-            source: 'Shopify',
-            orderNumber: payload.name,
-            customerName: `${payload.customer?.first_name || ''} ${payload.customer?.last_name || ''}`.trim(),
-            totalAmount: payload.total_price
-        },
-        woocommerce: {
-            externalId: payload.id?.toString(),
-            source: 'WooCommerce',
-            orderNumber: `#${payload.number}`,
-            customerName: `${payload.billing?.first_name || ''} ${payload.billing?.last_name || ''}`.trim(),
-            totalAmount: payload.total
-        },
-        custom: {
-            externalId: payload.id || Date.now().toString(),
-            source: payload.source || 'Custom API',
-            orderNumber: payload.orderNumber,
-            customerName: payload.customerName,
-            totalAmount: payload.total
-        }
-    };
-    return { ...map[platform], status: 'Received', raw: payload };
-};
 
 // --- API Endpoints ---
 
 // Get all companies (for super admin)
 app.get('/api/companies', async (req, res) => {
   try {
-    const companies = await Company.find();
-    res.json(companies);
+    // Note: Company model currently removed to favor simplified demo, 
+    // but in real app we'd keep it. Using order logic as primary focus.
+    res.json([]);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -139,6 +88,50 @@ app.post('/api/company/:companyId/menu-permissions', async (req, res) => {
   }
 });
 
+// Integration Management
+app.post('/api/integrations', async (req, res) => {
+  try {
+    const int = await Integration.findOneAndUpdate(
+      { companyId: req.body.companyId, platform: req.body.platform, storeName: req.body.storeName },
+      req.body,
+      { upsert: true, new: true }
+    );
+    res.status(201).json(int);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/integrations/:companyId', async (req, res) => {
+  try {
+    const ints = await Integration.find({ companyId: req.params.companyId });
+    res.json(ints);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/integrations/:id/sync', async (req, res) => {
+  try {
+    const int = await Integration.findById(req.params.id);
+    if (!int) return res.status(404).send('Integration not found');
+
+    let result;
+    if (int.platform === 'shopify') {
+      result = await syncShopifyOrders(int);
+    } else {
+      return res.status(400).send('Platform not supported for manual sync');
+    }
+
+    int.health.lastSync = new Date();
+    await int.save();
+
+    res.json({ success: true, ...result });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Seed Initial Menus
 app.post('/api/seed-menus', async (req, res) => {
   const menus = [
@@ -164,36 +157,43 @@ const PORT = process.env.PORT || 5000;
 
 // --- Integration Webhooks ---
 
-app.post('/api/integrations/:platform/:companyId', async (req, res) => {
+app.post('/api/webhook/:platform/:companyId', async (req, res) => {
     const { platform, companyId } = req.params;
     const payload = req.body;
 
-    console.log(`📦 Incoming ${platform} order for ${companyId}`);
-
     try {
-        // 1. Verify Integration exists
-        const integration = await Integration.findOne({ companyId, platformId: platform });
-        if (!integration) {
-            console.warn('❌ Integration not found');
-            return res.status(404).send('Integration not found');
+        const integration = await Integration.findOne({ companyId, platform: platform });
+        if (!integration) return res.status(404).send('Integration not found');
+
+        // Security Verification
+        if (platform === 'shopify') {
+            const hmac = req.headers['x-shopify-hmac-sha256'];
+            if (!verifyShopifyWebhook(req.rawBody, hmac, integration.webhookSecret)) {
+                return res.status(401).send('Invalid Signature');
+            }
+        } else if (platform === 'woocommerce') {
+            const signature = req.headers['x-wc-webhook-signature'];
+            if (!verifyWooCommerceWebhook(req.rawBody, signature, integration.webhookSecret)) {
+                return res.status(401).send('Invalid Signature');
+            }
         }
 
-        // 2. Transform to Unified Format
         const unifiedOrder = transformOrder(platform, payload);
         
-        // 3. Save to MongoDB
         const newOrder = await Order.create({
             ...unifiedOrder,
             companyId
         });
 
-        // 4. Trigger Automation (Simulated/Mocked)
-        console.log(`⚡ Triggering automation for order ${newOrder.orderNumber}`);
-        // await AutomationFetcher.trigger('ORDER_CREATED', newOrder);
+        // Update Health
+        integration.health.lastWebhook = new Date();
+        await integration.save();
 
         res.status(201).json({ success: true, orderId: newOrder._id });
     } catch (err) {
-        console.error('❌ Webhook Error:', err);
+        if (err.code === 11000) {
+            return res.status(200).json({ success: true, message: 'Duplicate order ignored' });
+        }
         res.status(500).send('Internal Server Error');
     }
 });

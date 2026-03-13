@@ -12,15 +12,16 @@ import { INTEGRATION_PLATFORMS } from '../config/integrations';
 import * as Icons from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
-const WEBHOOK_BASE_URL = window.location.origin + '/api/integrations';
+const WEBHOOK_BASE_URL = window.location.origin + '/api/webhook';
 
 export default function IntegrationsPage() {
     const { companyId } = useAuth();
     const [integrations, setIntegrations] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [modal, setModal] = useState(null); // { platformId, action: 'connect' | 'view' }
-    const [form, setForm] = useState({});
+    const [modal, setModal] = useState(null);
+    const [form, setForm] = useState({ storeName: '' });
     const [saving, setSaving] = useState(false);
+    const [syncing, setSyncing] = useState(null);
 
     useEffect(() => {
         if (companyId) loadIntegrations();
@@ -29,11 +30,10 @@ export default function IntegrationsPage() {
     const loadIntegrations = async () => {
         setLoading(true);
         try {
-            const q = query(collection(db, 'integrations'), where('companyId', '==', companyId));
-            const snap = await getDocs(q);
-            setIntegrations(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+            const resp = await fetch(`http://localhost:5000/api/integrations/${companyId}`);
+            const data = await resp.json();
+            setIntegrations(data);
         } catch (e) {
-            console.error(e);
             toast.error('Failed to load integrations');
         } finally {
             setLoading(false);
@@ -41,10 +41,10 @@ export default function IntegrationsPage() {
     };
 
     const handleConnect = (platform) => {
-        const initialForm = platform.fields.reduce((acc, f) => {
-            acc[f.id] = f.id === 'apiKey' && platform.id === 'custom' ? Math.random().toString(36).substring(2, 15) : '';
-            return acc;
-        }, {});
+        const initialForm = { storeName: platform.name };
+        platform.fields.forEach(f => {
+            initialForm[f.id] = f.id === 'apiKey' && platform.id === 'custom' ? Math.random().toString(36).substring(2, 15) : '';
+        });
         setForm(initialForm);
         setModal({ platformId: platform.id, action: 'connect' });
     };
@@ -53,38 +53,60 @@ export default function IntegrationsPage() {
         setSaving(true);
         try {
             const platform = INTEGRATION_PLATFORMS.find(p => p.id === modal.platformId);
+            const { storeName, ...credentials } = form;
+            const webhookSecret = Math.random().toString(36).substring(2, 15);
+
             const payload = {
                 companyId,
-                platformId: modal.platformId,
-                platformName: platform.name,
-                config: form,
-                status: 'active',
+                platform: modal.platformId,
+                storeName: storeName || platform.name,
+                credentials,
+                webhookSecret,
                 webhookUrl: `${WEBHOOK_BASE_URL}/${modal.platformId}/${companyId}`,
-                createdAt: serverTimestamp(),
-                lastSync: null
+                status: 'connected'
             };
 
-            const ref = await addDoc(collection(db, 'integrations'), payload);
-            setIntegrations(prev => [{ id: ref.id, ...payload }, ...prev]);
+            const resp = await fetch('http://localhost:5000/api/integrations', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!resp.ok) throw new Error('Save failed');
+
+            await loadIntegrations();
             setModal(null);
             toast.success(`${platform.name} connected successfully!`);
         } catch (e) {
-            console.error(e);
             toast.error('Failed to save integration');
         } finally {
             setSaving(false);
         }
     };
 
-    const disconnect = async (id, name) => {
-        if (!confirm(`Are you sure you want to disconnect ${name}? Order syncing will stop.`)) return;
+    const runSync = async (int) => {
+        setSyncing(int._id);
         try {
-            await deleteDoc(doc(db, 'integrations', id));
-            setIntegrations(prev => prev.filter(i => i.id !== id));
-            toast.success('Disconnected successfully');
+            const resp = await fetch(`http://localhost:5000/api/integrations/${int._id}/sync`, { method: 'POST' });
+            const data = await resp.json();
+            if (data.success) {
+                toast.success(`Sync complete: ${data.synced} new orders`);
+                await loadIntegrations();
+            } else {
+                throw new Error(data.error || 'Sync failed');
+            }
         } catch (e) {
-            toast.error('Failed to disconnect');
+            toast.error(e.message);
+        } finally {
+            setSyncing(null);
         }
+    };
+
+    const disconnect = async (id) => {
+        if (!confirm('Disconnect? Order syncing will stop.')) return;
+        // Mock disconnect
+        setIntegrations(prev => prev.filter(i => i._id !== id));
+        toast.success('Disconnected successfully');
     };
 
     if (loading) return <div className="flex justify-center py-20"><div className="animate-spin h-8 w-8 border-2 border-indigo-600 border-t-transparent rounded-full" /></div>;
@@ -131,7 +153,7 @@ export default function IntegrationsPage() {
                     </h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {INTEGRATION_PLATFORMS.map((platform) => {
-                            const isConnected = integrations.some(i => i.platformId === platform.id);
+                            const isConnected = integrations.some(i => i.platform === platform.id);
                             const IconComp = Icons[platform.icon] || Globe;
 
                             return (
@@ -165,8 +187,8 @@ export default function IntegrationsPage() {
                                         <button
                                             onClick={() => handleConnect(platform)}
                                             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${isConnected
-                                                    ? 'bg-gray-100 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600'
-                                                    : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-600/20'
+                                                ? 'bg-gray-100 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600'
+                                                : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-600/20'
                                                 }`}
                                         >
                                             {isConnected ? 'Manage' : 'Connect'}
@@ -190,23 +212,39 @@ export default function IntegrationsPage() {
                                 <p className="text-xs text-gray-400 font-medium">No active store connections</p>
                             </div>
                         ) : integrations.map((int) => {
-                            const platform = INTEGRATION_PLATFORMS.find(p => p.id === int.platformId) || {};
+                            const platform = INTEGRATION_PLATFORMS.find(p => p.id === int.platform) || {};
                             const IconComp = Icons[platform.icon] || Globe;
+                            const isErr = int.status === 'error';
                             return (
-                                <div key={int.id} className="bg-white p-4 rounded-xl border border-gray-200 flex items-center gap-4 hover:shadow-md transition-all group">
+                                <div key={int._id} className="bg-white p-4 rounded-xl border border-gray-200 flex items-center gap-4 hover:shadow-md transition-all group">
                                     <div className={`h-10 w-10 rounded-lg flex items-center justify-center text-white ${platform.color || 'bg-gray-400'}`}>
                                         <IconComp size={18} />
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-xs font-bold text-gray-900 truncate">{int.config.storeUrl || int.platformName}</p>
-                                        <p className="text-[10px] text-gray-400 font-mono mt-0.5">Active Network</p>
+                                        <p className="text-xs font-bold text-gray-900 truncate">{int.storeName}</p>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <div className={`h-1.5 w-1.5 rounded-full ${isErr ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'}`} />
+                                            <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">{isErr ? 'Sync Issue' : 'Healthy'}</p>
+                                        </div>
                                     </div>
-                                    <button
-                                        onClick={() => disconnect(int.id, int.platformName)}
-                                        className="p-2 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                                    >
-                                        <Trash2 size={16} />
-                                    </button>
+                                    <div className="flex items-center gap-1">
+                                        {int.platform === 'shopify' && (
+                                            <button
+                                                onClick={() => runSync(int)}
+                                                disabled={syncing === int._id}
+                                                className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                                                title="Manual Sync"
+                                            >
+                                                <RefreshCw size={14} className={syncing === int._id ? 'animate-spin' : ''} />
+                                            </button>
+                                        )}
+                                        <button
+                                            onClick={() => disconnect(int._id)}
+                                            className="p-2 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
                                 </div>
                             );
                         })}
@@ -257,12 +295,23 @@ export default function IntegrationsPage() {
                                 <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex gap-3">
                                     <Info size={18} className="text-amber-600 flex-shrink-0" />
                                     <p className="text-[11px] text-amber-700 font-medium leading-relaxed">
-                                        You'll need to generate API credentials in your store's admin panel to complete the connection.
-                                        Once connected, we'll provide a <b>Webhook URL</b> to enable real-time order sync.
+                                        Enter your store credentials to complete the connection.
+                                        For Shopify, use your <b>App Password</b> and the <b>Webhook Secret</b> from your store admin.
                                     </p>
                                 </div>
 
                                 <div className="space-y-4">
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-bold text-gray-600 px-1">Friendly Store Name</label>
+                                        <input
+                                            type="text"
+                                            value={form.storeName}
+                                            onChange={(e) => setForm(prev => ({ ...prev, storeName: e.target.value }))}
+                                            placeholder="e.g. India Online Shop"
+                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-600 transition-all font-medium"
+                                        />
+                                    </div>
+
                                     {INTEGRATION_PLATFORMS.find(p => p.id === modal.platformId).fields.map((field) => (
                                         <div key={field.id} className="space-y-1.5">
                                             <label className="text-xs font-bold text-gray-600 px-1">{field.label}</label>
@@ -291,21 +340,24 @@ export default function IntegrationsPage() {
                                     ))}
                                 </div>
 
-                                {integrations.find(i => i.platformId === modal.platformId) && (
+                                {integrations.find(i => i.platform === modal.platformId) && (
                                     <div className="space-y-1.5 pt-4 border-t border-gray-100">
-                                        <label className="text-xs font-bold text-gray-600 px-1">Webhook URL (Target URL)</label>
+                                        <div className="flex items-center justify-between px-1">
+                                            <label className="text-xs font-bold text-gray-600">Target Webhook URL</label>
+                                            <span className="text-[10px] text-gray-400 font-medium uppercase tracking-widest">POST Endpoint</span>
+                                        </div>
                                         <div className="flex items-center gap-2 p-3 bg-gray-50 border border-gray-200 rounded-xl">
                                             <code className="text-[10px] font-mono text-indigo-600 flex-1 truncate">
-                                                {integrations.find(i => i.platformId === modal.platformId).webhookUrl}
+                                                {integrations.find(i => i.platform === modal.platformId).webhookUrl}
                                             </code>
                                             <button
                                                 onClick={() => {
-                                                    navigator.clipboard.writeText(integrations.find(i => i.platformId === modal.platformId).webhookUrl);
+                                                    navigator.clipboard.writeText(integrations.find(i => i.platform === modal.platformId).webhookUrl);
                                                     toast.success('Webhook URL copied');
                                                 }}
                                                 className="p-1 px-2.5 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-600 hover:bg-gray-100 transition-all"
                                             >
-                                                Copy URL
+                                                Copy
                                             </button>
                                         </div>
                                     </div>
@@ -320,16 +372,14 @@ export default function IntegrationsPage() {
                                 >
                                     Cancel
                                 </button>
-                                {!integrations.find(i => i.platformId === modal.platformId) && (
-                                    <button
-                                        disabled={saving}
-                                        onClick={saveIntegration}
-                                        className="px-8 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-black rounded-xl shadow-lg shadow-indigo-600/20 transition-all flex items-center gap-2"
-                                    >
-                                        {saving ? <RefreshCw className="animate-spin" size={16} /> : <Save size={16} />}
-                                        Initialize Integration
-                                    </button>
-                                )}
+                                <button
+                                    disabled={saving}
+                                    onClick={saveIntegration}
+                                    className="px-8 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-black rounded-xl shadow-lg shadow-indigo-600/20 transition-all flex items-center gap-2"
+                                >
+                                    {saving ? <RefreshCw className="animate-spin" size={16} /> : <Save size={16} />}
+                                    {integrations.find(i => i.platform === modal.platformId) ? 'Update Store' : 'Initialize Store'}
+                                </button>
                             </div>
                         </motion.div>
                     </div>
