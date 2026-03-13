@@ -46,6 +46,9 @@ const permissionSchema = new mongoose.Schema({
 const Menu = mongoose.model('Menu', menuSchema);
 const Permission = mongoose.model('Permission', permissionSchema);
 
+// --- Health Check ---
+app.get('/health', (req, res) => res.status(200).send('OK'));
+
 // --- API Endpoints ---
 
 // Get all companies (for super admin)

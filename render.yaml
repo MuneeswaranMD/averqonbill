@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: averqon-api
+    env: node
+    plan: free
+    rootDir: server
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: NODE_VERSION
+        value: 18.x
+      - key: MONGO_URI
+        sync: false
+      - key: PORT
+        value: 10000
+    healthCheckPath: /health
