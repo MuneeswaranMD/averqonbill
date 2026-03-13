@@ -19,6 +19,7 @@ export default function IntegrationsPage() {
     const { companyId } = useAuth();
     const [integrations, setIntegrations] = useState([]);
     const [orderCount, setOrderCount] = useState(0);
+    const [productCount, setProductCount] = useState(0);
     const [loading, setLoading] = useState(true);
     const [modal, setModal] = useState(null);
     const [form, setForm] = useState({ storeName: '' });
@@ -28,7 +29,7 @@ export default function IntegrationsPage() {
     useEffect(() => {
         if (companyId) {
             loadIntegrations();
-            loadOrderCount();
+            loadStats();
         }
     }, [companyId]);
 
@@ -42,11 +43,16 @@ export default function IntegrationsPage() {
         }
     };
 
-    const loadOrderCount = async () => {
+    const loadStats = async () => {
         try {
-            const resp = await fetch(`${API_BASE_URL}/orders/${companyId}`);
-            const data = await resp.json();
-            setOrderCount(data.length);
+            const [oResp, pResp] = await Promise.all([
+                fetch(`${API_BASE_URL}/orders/${companyId}`),
+                fetch(`${API_BASE_URL}/products/${companyId}`)
+            ]);
+            const oData = await oResp.json();
+            const pData = await pResp.json();
+            setOrderCount(oData.length);
+            setProductCount(pData.length);
         } catch (e) {
             console.error(e);
         } finally {
@@ -261,6 +267,8 @@ export default function IntegrationsPage() {
                                         <div className="flex items-center gap-2 mt-1">
                                             <div className={`h-1.5 w-1.5 rounded-full ${isErr ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'}`} />
                                             <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">{isErr ? 'Sync Issue' : 'Healthy'}</p>
+                                            <span className="text-[9px] text-gray-300">•</span>
+                                            <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">{productCount} Products</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-1">

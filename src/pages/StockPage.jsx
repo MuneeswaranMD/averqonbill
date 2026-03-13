@@ -259,10 +259,24 @@ export default function StockPage() {
         else newStock = qty;
 
         try {
+            // Update Firestore for local management
             await updateDoc(doc(db, 'products', p.id), {
                 stock: newStock,
                 updatedAt: serverTimestamp()
             });
+
+            // If it's an integrated product, push to backend so it can sync to Shopify/WooCommerce
+            if (p.platform) {
+                try {
+                    await fetch(`https://averqonbill-1.onrender.com/api/products/${p._id}/adjust-stock`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ qty: newStock, companyId })
+                    });
+                } catch (err) {
+                    console.error('Failed to push stock update to platform:', err);
+                }
+            }
 
             const logEntry = {
                 companyId,

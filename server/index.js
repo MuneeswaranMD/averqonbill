@@ -11,6 +11,7 @@ import { verifyShopifyWebhook, verifyWooCommerceWebhook } from './integrations/s
 import { syncShopifyOrders, syncShopifyProducts } from './integrations/shopify.js';
 import { syncWooCommerceOrders, syncWooCommerceProducts } from './integrations/woocommerce.js';
 import { updateStockFromOrder } from './services/stockService.js';
+import { pushInventoryToPlatform } from './services/inventoryPush.js';
 
 dotenv.config();
 
@@ -255,6 +256,26 @@ app.post('/api/webhook/:platform/:companyId', async (req, res) => {
     }
 });
 
+app.post('/api/products/:id/adjust-stock', async (req, res) => {
+    const { qty, companyId } = req.body;
+    try {
+        const product = await Product.findById(req.params.id);
+        if (!product) return res.status(404).send('Product not found');
+
+        product.stock = qty;
+        await product.save();
+
+        // Push to external platform if integrated
+        if (product.platform && product.externalId) {
+            await pushInventoryToPlatform(companyId, product._id, qty);
+        }
+
+        res.json({ success: true, newStock: product.stock });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.get('/api/orders/:companyId', async (req, res) => {
     try {
         const orders = await Order.find({ companyId: req.params.companyId }).sort({ createdAt: -1 });
@@ -270,6 +291,44 @@ app.get('/api/products/:companyId', async (req, res) => {
         res.json(products);
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+// --- Product Webhooks (Real-time Sync) ---
+app.post('/api/webhook/products/:platform/:companyId', async (req, res) => {
+    const { platform, companyId } = req.params;
+    const payload = req.body;
+
+    try {
+        const integration = await Integration.findOne({ companyId, platform });
+        if (!integration) return res.status(404).send('Integration not found');
+
+        // Security Verification (Same as orders)
+        if (platform === 'shopify') {
+            const hmac = req.headers['x-shopify-hmac-sha256'];
+            if (hmac && !verifyShopifyWebhook(req.rawBody, hmac, integration.webhookSecret)) {
+                return res.status(401).send('Invalid Signature');
+            }
+        } else if (platform === 'woocommerce') {
+            const signature = req.headers['x-wc-webhook-signature'];
+            if (signature && !verifyWooCommerceWebhook(req.rawBody, signature, integration.webhookSecret)) {
+                return res.status(401).send('Invalid Signature');
+            }
+        }
+
+        const unified = transformProduct(platform, payload);
+        
+        await Product.findOneAndUpdate(
+            { companyId, externalId: unified.externalId, platform },
+            { ...unified, companyId },
+            { upsert: true, new: true }
+        );
+
+        console.log(`[Product Webhook] ${platform} product updated: ${unified.name}`);
+        res.status(200).send('Product Updated');
+    } catch (err) {
+        console.error('Product Webhook Error:', err.message);
+        res.status(500).send('Server Error');
     }
 });
 
