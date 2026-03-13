@@ -92,17 +92,41 @@ export default function POSPage() {
     const [showCartMobile, setShowCartMobile] = useState(false);
     const searchRef = useRef(null);
 
+    const loadData = async () => {
+        if (!companyId) return;
+        setLoading(true);
+        try {
+            const [prods, custs] = await Promise.all([
+                FirestoreService.getProducts(companyId),
+                FirestoreService.getCustomers(companyId),
+            ]);
+
+            // Also fetch from backend
+            let beProducts = [];
+            try {
+                const resp = await fetch(`https://averqonbill-1.onrender.com/api/products/${companyId}`);
+                if (resp.ok) beProducts = await resp.json();
+            } catch (e) { }
+
+            const normalizedBackend = beProducts.map(p => ({
+                id: p._id,
+                ...p,
+                image: p.images?.[0] || '',
+                source: p.platform
+            }));
+
+            setProducts([...prods, ...normalizedBackend]);
+            setCustomers(custs);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     /* Load data */
     useEffect(() => {
-        if (!companyId) return;
-        Promise.all([
-            FirestoreService.getProducts(companyId),
-            FirestoreService.getCustomers(companyId),
-        ]).then(([prods, custs]) => {
-            setProducts(prods);
-            setCustomers(custs);
-        }).catch(console.error)
-            .finally(() => setLoading(false));
+        loadData();
     }, [companyId]);
 
     /* Keyboard shortcut: F2 → focus search */
@@ -245,7 +269,7 @@ export default function POSPage() {
                         <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                     </div>
 
-                    <button onClick={() => { setLoading(true); FirestoreService.getProducts(companyId).then(setProducts).finally(() => setLoading(false)); }}
+                    <button onClick={loadData}
                         className="p-2 border border-gray-200 rounded-xl text-gray-500 hover:bg-gray-50 transition-colors">
                         <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
                     </button>
@@ -304,7 +328,12 @@ export default function POSPage() {
                                             }`}
                                     >
                                         {/* Product Image area */}
-                                        <div className="h-20 w-full flex items-center justify-center mb-2 bg-gray-50 rounded-lg group-hover:bg-blue-50 transition-colors overflow-hidden border border-gray-100/50">
+                                        <div className="h-20 w-full flex items-center justify-center mb-2 bg-gray-50 rounded-lg group-hover:bg-blue-50 transition-colors overflow-hidden border border-gray-100/50 relative">
+                                            {product.platform && (
+                                                <span className="absolute top-1 left-1 px-1 py-0.5 bg-white/90 backdrop-blur-sm text-indigo-600 text-[8px] font-black rounded uppercase tracking-tighter border border-indigo-100/50 shadow-sm z-10">
+                                                    {product.platform}
+                                                </span>
+                                            )}
                                             {product.image ? (
                                                 <img src={product.image} alt={product.name} className="h-full w-full object-cover transition-transform group-hover:scale-110" />
                                             ) : (
