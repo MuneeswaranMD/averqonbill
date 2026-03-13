@@ -20,9 +20,9 @@ export async function pushProductToPlatform(companyId, productId, updateData) {
         }
 
         if (product.platform === 'shopify') {
-            return await pushToShopify(integration, product.externalId, updateData);
+            return await pushToShopify(integration, product.externalId, product);
         } else if (product.platform === 'woocommerce') {
-            return await pushToWooCommerce(integration, product.externalId, updateData);
+            return await pushToWooCommerce(integration, product.externalId, product);
         }
 
         return { success: false, message: 'Unsupported platform' };
@@ -32,25 +32,26 @@ export async function pushProductToPlatform(companyId, productId, updateData) {
     }
 }
 
-async function pushToShopify(integration, externalId, data) {
+async function pushToShopify(integration, externalId, product) {
     const { storeUrl, accessToken } = integration.credentials;
     const cleanUrl = storeUrl.startsWith('http') ? storeUrl : `https://${storeUrl}`;
     
-    // Shopify stores ID as gid://shopify/Product/12345 or just 12345
     const id = externalId.includes('/') ? externalId.split('/').pop() : externalId;
+    const variantId = product.externalData?.variants?.[0]?.id;
     
     const url = `${cleanUrl.replace(/\/$/, '')}/admin/api/2024-01/products/${id}.json`;
     const payload = {
         product: {
             id: id,
-            title: data.name,
-            body_html: data.description,
-            vendor: data.brand,
-            product_type: data.category,
+            title: product.name,
+            body_html: product.description,
+            vendor: product.brand,
+            product_type: product.category,
             variants: [
                 {
-                    price: data.price,
-                    sku: data.sku
+                    id: variantId,
+                    price: String(product.price),
+                    sku: product.sku
                 }
             ]
         }
@@ -66,17 +67,17 @@ async function pushToShopify(integration, externalId, data) {
     return { success: true };
 }
 
-async function pushToWooCommerce(integration, externalId, data) {
+async function pushToWooCommerce(integration, externalId, product) {
     const { storeUrl, consumerKey, consumerSecret } = integration.credentials;
     const cleanUrl = storeUrl.startsWith('http') ? storeUrl : `https://${storeUrl}`;
     const url = `${cleanUrl.replace(/\/$/, '')}/wp-json/wc/v3/products/${externalId}`;
     
     const payload = {
-        name: data.name,
-        description: data.description,
-        regular_price: String(data.price),
-        sku: data.sku,
-        categories: data.category ? [{ name: data.category }] : []
+        name: product.name,
+        description: product.description,
+        regular_price: String(product.price),
+        sku: product.sku,
+        categories: product.category ? [{ name: product.category }] : []
     };
 
     const auth = Buffer.from(`${consumerKey}:${consumerSecret}`).toString('base64');
