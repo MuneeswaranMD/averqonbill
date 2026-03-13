@@ -3,6 +3,7 @@ import Order from '../models/Order.js';
 import Product from '../models/Product.js';
 import { transformOrder } from '../services/orderTransformer.js';
 import { transformProduct } from '../services/productTransformer.js';
+import { updateStockFromOrder } from '../services/stockService.js';
 
 export const syncShopifyOrders = async (integration) => {
     const { storeUrl, accessToken } = integration.credentials;
@@ -22,7 +23,11 @@ export const syncShopifyOrders = async (integration) => {
         for (const rawOrder of orders) {
             try {
                 const unified = transformOrder('shopify', rawOrder);
-                await Order.create({ ...unified, companyId: integration.companyId });
+                const newOrder = await Order.create({ ...unified, companyId: integration.companyId });
+                
+                // --- Automatic Stock Updates ---
+                await updateStockFromOrder(integration.companyId, newOrder);
+
                 results.synced++;
             } catch (err) {
                 if (err.code === 11000) results.duplicates++;

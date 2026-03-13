@@ -10,6 +10,7 @@ import Integration from './models/Integration.js';
 import { verifyShopifyWebhook, verifyWooCommerceWebhook } from './integrations/security.js';
 import { syncShopifyOrders, syncShopifyProducts } from './integrations/shopify.js';
 import { syncWooCommerceOrders, syncWooCommerceProducts } from './integrations/woocommerce.js';
+import { updateStockFromOrder } from './services/stockService.js';
 
 dotenv.config();
 
@@ -17,7 +18,11 @@ dotenv.config();
 dns.setDefaultResultOrder('ipv4first');
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Shopify-Hmac-Sha256', 'X-WC-Webhook-Signature']
+}));
 
 // Middleware to capture raw body for webhook verification
 app.use(express.json({
@@ -221,6 +226,10 @@ app.post('/api/webhook/:platform/:companyId', async (req, res) => {
             ...unifiedOrder,
             companyId
         });
+
+        // --- Automatic Stock Updates ---
+        const stockResult = await updateStockFromOrder(companyId, newOrder);
+        console.log(`[Webhook] Order ${newOrder._id} processed. Stock updated for ${stockResult.updated} items.`);
 
         // Update Health
         integration.health.lastWebhook = new Date();
