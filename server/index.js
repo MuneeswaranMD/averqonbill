@@ -172,11 +172,14 @@ app.post('/api/webhook/:platform/:companyId', async (req, res) => {
         if (platform === 'shopify') {
             const hmac = req.headers['x-shopify-hmac-sha256'];
             if (!verifyShopifyWebhook(req.rawBody, hmac, integration.webhookSecret)) {
+                console.warn(`[Webhook] Invalid Shopify Signature for company: ${companyId}`);
                 return res.status(401).send('Invalid Signature');
             }
         } else if (platform === 'woocommerce') {
             const signature = req.headers['x-wc-webhook-signature'];
             if (!verifyWooCommerceWebhook(req.rawBody, signature, integration.webhookSecret)) {
+                console.warn(`[Webhook] Invalid WooCommerce Signature for company: ${companyId}`);
+                console.log(`[Webhook Details] Signature: ${signature}, Secret: ${integration.webhookSecret}`);
                 return res.status(401).send('Invalid Signature');
             }
         }

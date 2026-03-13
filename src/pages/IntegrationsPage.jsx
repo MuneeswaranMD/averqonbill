@@ -70,15 +70,15 @@ export default function IntegrationsPage() {
         setSaving(true);
         try {
             const platform = INTEGRATION_PLATFORMS.find(p => p.id === modal.platformId);
-            const { storeName, ...credentials } = form;
-            const webhookSecret = Math.random().toString(36).substring(2, 15);
+            const { storeName, webhookSecret: manualSecret, ...credentials } = form;
+            const finalSecret = manualSecret || Math.random().toString(36).substring(2, 15);
 
             const payload = {
                 companyId,
                 platform: modal.platformId,
                 storeName: storeName || platform.name,
                 credentials,
-                webhookSecret,
+                webhookSecret: finalSecret,
                 webhookUrl: `${WEBHOOK_BASE_URL}/${modal.platformId}/${companyId}`,
                 status: 'connected'
             };

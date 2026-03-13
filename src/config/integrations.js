@@ -24,6 +24,7 @@ export const INTEGRATION_PLATFORMS = [
             { id: 'storeUrl', label: 'Store URL', placeholder: 'https://example.com', type: 'text' },
             { id: 'consumerKey', label: 'Consumer Key', placeholder: 'ck_...', type: 'password' },
             { id: 'consumerSecret', label: 'Consumer Secret', placeholder: 'cs_...', type: 'password' },
+            { id: 'webhookSecret', label: 'Webhook Secret', placeholder: 'Enter any secret (e.g. 12345)', type: 'password' },
         ],
     },
     {
