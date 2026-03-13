@@ -50,14 +50,40 @@ const EMPTY_ORDER = {
 };
 
 /* ── Create / Edit Modal ───────────────────────────── */
-function OrderModal({ open, onClose, onSave, initial }) {
+function OrderModal({ open, onClose, onSave, initial, products = [] }) {
     const [form, setForm] = useState(EMPTY_ORDER);
     const [saving, setSaving] = useState(false);
 
     useEffect(() => { setForm(initial ? { ...EMPTY_ORDER, ...initial } : EMPTY_ORDER); }, [initial, open]);
     if (!open) return null;
 
-    const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
+    const set = (k) => (e) => {
+        const val = e.target.value;
+        setForm(f => {
+            const next = { ...f, [k]: val };
+
+            // Auto-fetch price if product name matches
+            if (k === 'productName') {
+                const found = products.find(p => p.name === val);
+                if (found) {
+                    next.totalAmount = (Number(found.price) * (Number(next.quantity) || 1)).toString();
+                }
+            }
+
+            // Recalculate total if quantity changes and we have a price baseline
+            if (k === 'quantity') {
+                const found = products.find(p => p.name === next.productName);
+                if (found) {
+                    next.totalAmount = (Number(found.price) * (Number(val) || 1)).toString();
+                } else if (f.totalAmount && f.quantity) {
+                    const unitPrice = Number(f.totalAmount) / Number(f.quantity);
+                    next.totalAmount = (unitPrice * (Number(val) || 1)).toString();
+                }
+            }
+
+            return next;
+        });
+    };
 
     const field = (label, key, type = 'text', req = true, ph = '') => (
         <div>
@@ -65,7 +91,15 @@ function OrderModal({ open, onClose, onSave, initial }) {
                 {label}{req && <span className="text-red-400 ml-0.5">*</span>}
             </label>
             <input type={type} value={form[key]} onChange={set(key)} required={req} placeholder={ph}
+                list={key === 'productName' ? 'product-list' : undefined}
                 className="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400" />
+            {key === 'productName' && (
+                <datalist id="product-list">
+                    {products.map(p => (
+                        <option key={p.id} value={p.name}>{`₹${p.price} - SKU: ${p.sku || 'N/A'}`}</option>
+                    ))}
+                </datalist>
+            )}
         </div>
     );
 
@@ -90,7 +124,7 @@ function OrderModal({ open, onClose, onSave, initial }) {
                         {field('Customer Phone', 'customerPhone', 'tel', false, '+91 98765 43210')}
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                        {field('Product / Description', 'productName', 'text', true, 'e.g. Rocket Crackers')}
+                        {field('Product / Description', 'productName', 'text', true, 'Search or type product...')}
                         {field('Quantity', 'quantity', 'number', false, '1')}
                     </div>
                     <div className="grid grid-cols-2 gap-4">
@@ -315,6 +349,7 @@ export default function OrdersPage() {
     const { companyId } = useAuth();
     const navigate = useNavigate();
     const [orders, setOrders] = useState([]);
+    const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
@@ -323,7 +358,33 @@ export default function OrdersPage() {
     const [drawer, setDrawer] = useState(null);
     const [deleting, setDeleting] = useState(null);
 
-    useEffect(() => { if (companyId) load(); }, [companyId]);
+    useEffect(() => {
+        if (companyId) {
+            load();
+            loadProducts();
+        }
+    }, [companyId]);
+
+    const loadProducts = async () => {
+        try {
+            const fsProducts = await FirestoreService.getProducts(companyId);
+            let beProducts = [];
+            try {
+                const resp = await fetch(`https://averqonbill-1.onrender.com/api/products/${companyId}`);
+                if (resp.ok) beProducts = await resp.json();
+            } catch (e) { }
+
+            const normalizedBackend = beProducts.map(p => ({
+                id: p._id,
+                ...p,
+                image: p.images?.[0] || '',
+            }));
+
+            setProducts([...fsProducts, ...normalizedBackend]);
+        } catch (e) {
+            console.error('Failed to load products for selection', e);
+        }
+    };
 
     const load = async () => {
         setLoading(true);
@@ -452,7 +513,7 @@ export default function OrdersPage() {
     return (
         <div className="space-y-5">
             {/* Modals */}
-            <OrderModal open={modal.open} initial={modal.item}
+            <OrderModal open={modal.open} initial={modal.item} products={products}
                 onClose={() => setModal({ open: false, item: null })}
                 onSave={handleSave} />
             <OrderDrawer
