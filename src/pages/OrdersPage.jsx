@@ -305,7 +305,33 @@ export default function OrdersPage() {
 
     const load = async () => {
         setLoading(true);
-        try { setOrders(await FirestoreService.getOrders(companyId)); }
+        try {
+            const firestoreOrders = await FirestoreService.getOrders(companyId);
+            let backendOrders = [];
+            try {
+                const resp = await fetch(`https://averqonbill-1.onrender.com/api/orders/${companyId}`);
+                if (resp.ok) backendOrders = await resp.json();
+            } catch (err) { console.warn('Backend orders failed to load', err); }
+
+            // Normalize backend orders to match UI expectation if necessary
+            const normalizedBackend = backendOrders.map(o => ({
+                id: o._id,
+                customerName: o.customerName || o.customer?.name,
+                totalAmount: o.totalAmount || o.pricing?.total,
+                status: o.status,
+                payment: o.paymentStatus || o.payment?.status,
+                date: o.createdAt,
+                source: o.source,
+                ...o
+            }));
+
+            // Combine and sort
+            const combined = [...firestoreOrders, ...normalizedBackend].sort((a, b) =>
+                new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt)
+            );
+
+            setOrders(combined);
+        }
         catch (e) { console.error(e); }
         finally { setLoading(false); }
     };

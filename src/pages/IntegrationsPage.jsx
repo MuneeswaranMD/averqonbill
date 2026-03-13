@@ -12,7 +12,8 @@ import { INTEGRATION_PLATFORMS } from '../config/integrations';
 import * as Icons from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
-const WEBHOOK_BASE_URL = window.location.origin + '/api/webhook';
+const API_BASE_URL = 'https://averqonbill-1.onrender.com/api';
+const WEBHOOK_BASE_URL = 'https://averqonbill-1.onrender.com/api/webhook';
 
 export default function IntegrationsPage() {
     const { companyId } = useAuth();
@@ -30,7 +31,7 @@ export default function IntegrationsPage() {
     const loadIntegrations = async () => {
         setLoading(true);
         try {
-            const resp = await fetch(`http://localhost:5000/api/integrations/${companyId}`);
+            const resp = await fetch(`${API_BASE_URL}/integrations/${companyId}`);
             const data = await resp.json();
             setIntegrations(data);
         } catch (e) {
@@ -66,7 +67,7 @@ export default function IntegrationsPage() {
                 status: 'connected'
             };
 
-            const resp = await fetch('http://localhost:5000/api/integrations', {
+            const resp = await fetch(`${API_BASE_URL}/integrations`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -87,7 +88,7 @@ export default function IntegrationsPage() {
     const runSync = async (int) => {
         setSyncing(int._id);
         try {
-            const resp = await fetch(`http://localhost:5000/api/integrations/${int._id}/sync`, { method: 'POST' });
+            const resp = await fetch(`${API_BASE_URL}/integrations/${int._id}/sync`, { method: 'POST' });
             const data = await resp.json();
             if (data.success) {
                 toast.success(`Sync complete: ${data.synced} new orders`);
