@@ -42,6 +42,7 @@ const ALL_NAV_ITEMS = [
     { name: 'Products', href: '/products', icon: Package, moduleKey: 'Products' },
     { name: 'Stock', href: '/stock', icon: Layers, moduleKey: 'Inventory' },
     { name: 'Suppliers', href: '/suppliers', icon: Truck, moduleKey: 'Inventory' },
+    { name: 'Purchase Orders', href: '/purchase-orders', icon: ShoppingBag, moduleKey: 'Inventory' },
     { name: 'Customers', href: '/customers', icon: Users, moduleKey: 'Customers' },
     { name: 'Orders', href: '/orders', icon: ShoppingCart, moduleKey: 'Orders' },
     { name: 'Estimates', href: '/estimates', icon: FileText, moduleKey: 'Invoices' },

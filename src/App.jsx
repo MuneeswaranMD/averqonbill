@@ -45,7 +45,9 @@ const BookingsPage = lazy(() => import('./pages/BookingsPage'));
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
 const StaffManagementPage = lazy(() => import('./pages/StaffManagementPage'));
 const SuppliersPage = lazy(() => import('./pages/SuppliersPage'));
+const PurchaseOrdersPage = lazy(() => import('./pages/PurchaseOrdersPage'));
 const IntegrationsPage = lazy(() => import('./pages/IntegrationsPage'));
+
 
 // ── Super Admin Pages ────────────────────────────────────────────────────────
 const SuperAdminDashboard = lazy(() => import('./pages/SuperAdminDashboard'));
@@ -154,7 +156,9 @@ function App() {
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/staff" element={<StaffManagementPage />} />
               <Route path="/suppliers" element={<SuppliersPage />} />
+              <Route path="/purchase-orders" element={<PurchaseOrdersPage />} />
               <Route path="/integrations" element={<IntegrationsPage />} />
+
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/settings/templates" element={<InvoiceTemplatesPage />} />
               <Route index element={<Navigate to="/dashboard" replace />} />

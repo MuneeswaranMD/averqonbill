@@ -14,6 +14,14 @@ import { updateStockFromOrder } from './services/stockService.js';
 import { pushInventoryToPlatform } from './services/inventoryPush.js';
 import { pushOrderStatusToPlatform } from './services/orderPush.js';
 import { pushProductToPlatform } from './services/productPush.js';
+import Supplier from './models/Supplier.js';
+import PurchaseOrder from './models/PurchaseOrder.js';
+import SupplierPayment from './models/SupplierPayment.js';
+import Warehouse from './models/Warehouse.js';
+import Variant from './models/Variant.js';
+import Inventory from './models/Inventory.js';
+import { receiveStock, adjustStock } from './services/stockService.js';
+
 
 dotenv.config();
 
@@ -393,3 +401,147 @@ app.post('/api/orders/:id/update-status', async (req, res) => {
 });
 
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+
+// --- Supplier Management ---
+
+app.get('/api/suppliers', async (req, res) => {
+    const { companyId } = req.query;
+    try {
+        const suppliers = await Supplier.find({ companyId });
+        res.json(suppliers);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/suppliers', async (req, res) => {
+    try {
+        const supplier = new Supplier(req.body);
+        await supplier.save();
+        res.status(201).json(supplier);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/suppliers/:id', async (req, res) => {
+    try {
+        const supplier = await Supplier.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        res.json(supplier);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/suppliers/:id', async (req, res) => {
+    try {
+        await Supplier.findByIdAndDelete(req.params.id);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- Purchase Orders ---
+
+app.get('/api/purchase-orders', async (req, res) => {
+    const { companyId } = req.query;
+    try {
+        const pos = await PurchaseOrder.find({ companyId }).populate('supplierId').sort({ createdAt: -1 });
+        res.json(pos);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/purchase-orders', async (req, res) => {
+    try {
+        const poData = req.body;
+        // Simple auto-increment for order number if not provided
+        if (!poData.orderNumber) {
+            const count = await PurchaseOrder.countDocuments({ companyId: poData.companyId });
+            poData.orderNumber = `PO-${String(count + 1).padStart(5, '0')}`;
+        }
+        const po = new PurchaseOrder(poData);
+        await po.save();
+        res.status(201).json(po);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/purchase-orders/:id/receive', async (req, res) => {
+    try {
+        const po = await PurchaseOrder.findById(req.params.id);
+        if (!po) return res.status(404).json({ error: 'Purchase Order not found' });
+
+        const { items } = req.body; // Array of { variantId, receivedQty }
+
+        // Update received quantities in PO
+        if (items) {
+            items.forEach(updateItem => {
+                const poItem = po.items.find(i => i.variantId.toString() === updateItem.variantId);
+                if (poItem) {
+                    poItem.receivedQty = (poItem.receivedQty || 0) + Number(updateItem.receivedQty);
+                }
+            });
+        }
+
+        // Determine status
+        const allReceived = po.items.every(i => (i.receivedQty || 0) >= i.qty);
+        po.status = allReceived ? 'received' : 'partially_received';
+        po.receivedDate = new Date();
+        
+        await po.save();
+
+        // Update Inventory
+        await receiveStock(po.companyId, {
+            warehouseId: po.warehouseId,
+            items: items || po.items // Use the partial items if provided, else full list
+        });
+
+        res.json(po);
+    } catch (err) {
+        console.error('[PO Receive Error]', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- Warehouses ---
+
+app.get('/api/warehouses', async (req, res) => {
+    const { companyId } = req.query;
+    try {
+        let warehouses = await Warehouse.find({ companyId });
+        if (warehouses.length === 0) {
+            // Create a default warehouse if none exists
+            const defaultWh = new Warehouse({
+                companyId,
+                name: 'Main Warehouse',
+                location: 'Default Location',
+                isDefault: true
+            });
+            await defaultWh.save();
+            warehouses = [defaultWh];
+        }
+        res.json(warehouses);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- Stock / Inventory ---
+
+app.get('/api/inventory', async (req, res) => {
+    const { companyId, warehouseId } = req.query;
+    try {
+        const inventory = await Inventory.find({ warehouseId }).populate({
+            path: 'variantId',
+            populate: { path: 'productId' }
+        });
+        res.json(inventory);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+

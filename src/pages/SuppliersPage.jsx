@@ -29,39 +29,52 @@ export default function SuppliersPage() {
         category: ''
     });
 
-    useEffect(() => {
+    const API_URL = 'https://averqonbill-1.onrender.com/api/suppliers';
+
+    const fetchSuppliers = async () => {
         if (!companyId) return;
-        const q = query(collection(db, 'suppliers'), where('companyId', '==', companyId));
-        const unsub = onSnapshot(q, (snap) => {
-            const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setSuppliers(list);
-            if (list.length > 0 && !selectedSupplier) {
-                setSelectedSupplier(list[0]);
+        setLoading(true);
+        try {
+            const response = await fetch(`${API_URL}?companyId=${companyId}`);
+            if (response.ok) {
+                const data = await response.json();
+                setSuppliers(data);
+                if (data.length > 0 && !selectedSupplier) {
+                    setSelectedSupplier(data[0]);
+                }
             }
+        } catch (error) {
+            console.error("Error fetching suppliers:", error);
+        } finally {
             setLoading(false);
-        });
-        return unsub;
+        }
+    };
+
+    useEffect(() => {
+        fetchSuppliers();
     }, [companyId]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            if (editingSupplier) {
-                await updateDoc(doc(db, 'suppliers', editingSupplier.id), {
+            const url = editingSupplier ? `${API_URL}/${editingSupplier._id}` : API_URL;
+            const method = editingSupplier ? 'PUT' : 'POST';
+
+            const response = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
                     ...formData,
-                    updatedAt: serverTimestamp()
-                });
-            } else {
-                await addDoc(collection(db, 'suppliers'), {
-                    ...formData,
-                    companyId,
-                    createdAt: serverTimestamp(),
-                    updatedAt: serverTimestamp()
-                });
+                    companyId
+                })
+            });
+
+            if (response.ok) {
+                fetchSuppliers();
+                setShowModal(false);
+                setEditingSupplier(null);
+                setFormData({ name: '', contactPerson: '', email: '', phone: '', address: '', gstin: '', category: '' });
             }
-            setShowModal(false);
-            setEditingSupplier(null);
-            setFormData({ name: '', contactPerson: '', email: '', phone: '', address: '', gstin: '', category: '' });
         } catch (error) {
             console.error("Error saving supplier:", error);
         }
@@ -74,8 +87,8 @@ export default function SuppliersPage() {
             contactPerson: supplier.contactPerson || '',
             email: supplier.email || '',
             phone: supplier.phone || '',
-            address: supplier.address || '',
-            gstin: supplier.gstin || '',
+            address: supplier.address?.street || supplier.address || '',
+            gstin: supplier.gstNumber || supplier.gstin || '',
             category: supplier.category || ''
         });
         setShowModal(true);
@@ -83,8 +96,15 @@ export default function SuppliersPage() {
 
     const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this supplier?')) {
-            await deleteDoc(doc(db, 'suppliers', id));
-            if (selectedSupplier?.id === id) setSelectedSupplier(null);
+            try {
+                const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    fetchSuppliers();
+                    if (selectedSupplier?._id === id) setSelectedSupplier(null);
+                }
+            } catch (error) {
+                console.error("Error deleting supplier:", error);
+            }
         }
     };
 
