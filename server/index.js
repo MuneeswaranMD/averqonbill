@@ -400,7 +400,7 @@ app.post('/api/orders/:id/update-status', async (req, res) => {
     }
 });
 
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+
 
 // --- Supplier Management ---
 
@@ -545,3 +545,4 @@ app.get('/api/inventory', async (req, res) => {
     }
 });
 
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
