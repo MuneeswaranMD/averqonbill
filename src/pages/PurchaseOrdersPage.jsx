@@ -246,7 +246,17 @@ export default function PurchaseOrdersPage() {
                                                 <select
                                                     required
                                                     value={item.variantId}
-                                                    onChange={e => updateItem(index, 'variantId', e.target.value)}
+                                                    onChange={e => {
+                                                        const vId = e.target.value;
+                                                        const variant = variants.find(v => v._id === vId);
+                                                        const newItems = [...formData.items];
+                                                        newItems[index].variantId = vId;
+                                                        if (variant) {
+                                                            // Auto-fetch price: use costPrice if set, otherwise price
+                                                            newItems[index].price = variant.costPrice || variant.price || 0;
+                                                        }
+                                                        setFormData({ ...formData, items: newItems });
+                                                    }}
                                                     className="w-full px-3 py-1.5 bg-white border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-600 outline-none"
                                                 >
                                                     <option value="">Select Product</option>
