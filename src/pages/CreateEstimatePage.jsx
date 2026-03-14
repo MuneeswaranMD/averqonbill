@@ -68,14 +68,44 @@ export default function CreateEstimatePage() {
     /* ── Load customers + products ─────────── */
     useEffect(() => {
         if (!companyId) return;
-        Promise.all([
-            FirestoreService.getProducts(companyId),
-            FirestoreService.getCustomers(companyId),
-        ]).then(([prods, custs]) => {
-            setProducts(prods);
-            setCustomers(custs);
-        }).catch(console.error)
-            .finally(() => setLoadingData(false));
+
+        const loadData = async () => {
+            setLoadingData(true);
+            try {
+                // Fetch from Firestore
+                const [fsProds, custs] = await Promise.all([
+                    FirestoreService.getProducts(companyId),
+                    FirestoreService.getCustomers(companyId),
+                ]);
+
+                // Fetch from Backend (Website Products)
+                let backendProds = [];
+                try {
+                    const resp = await fetch(`https://averqonbill-1.onrender.com/api/products/${companyId}`);
+                    if (resp.ok) backendProds = await resp.json();
+                } catch (err) {
+                    console.warn('Backend products failed to load for estimate', err);
+                }
+
+                const normalizedBackend = backendProds.map(p => ({
+                    id: p._id,
+                    ...p,
+                    price: p.price || 0,
+                }));
+
+                // Combine and set
+                setProducts([...fsProds, ...normalizedBackend].sort((a, b) =>
+                    (a.name || '').localeCompare(b.name || '')
+                ));
+                setCustomers(custs);
+            } catch (err) {
+                console.error('Error loading estimate creation data:', err);
+            } finally {
+                setLoadingData(false);
+            }
+        };
+
+        loadData();
     }, [companyId]);
 
     /* ── Derived customer info ─────────────── */
