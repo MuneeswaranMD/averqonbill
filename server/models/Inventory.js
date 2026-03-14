@@ -11,7 +11,7 @@ const InventorySchema = new mongoose.Schema({
 }, { timestamps: true });
 
 InventorySchema.index({ variantId: 1, warehouseId: 1 }, { unique: true });
-InventorySchema.index({ companyId: 1 });
+
 
 
 InventorySchema.pre('save', function(next) {

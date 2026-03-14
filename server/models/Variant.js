@@ -21,6 +21,6 @@ const VariantSchema = new mongoose.Schema({
     barcode: String
 }, { timestamps: true });
 
-VariantSchema.index({ sku: 1 }, { unique: true });
+VariantSchema.index({ companyId: 1, sku: 1 }, { unique: true });
 
 export default mongoose.model('Variant', VariantSchema);

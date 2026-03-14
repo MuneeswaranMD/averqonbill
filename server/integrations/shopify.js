@@ -1,7 +1,9 @@
 import axios from 'axios';
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
+import Variant from '../models/Variant.js';
 import { transformOrder } from '../services/orderTransformer.js';
+
 import { transformProduct } from '../services/productTransformer.js';
 import { updateStockFromOrder } from '../services/stockService.js';
 
@@ -60,12 +62,37 @@ export const syncShopifyProducts = async (integration) => {
         for (const rawProd of products) {
             try {
                 const unified = transformProduct('shopify', rawProd);
-                await Product.findOneAndUpdate(
+                const product = await Product.findOneAndUpdate(
                     { companyId: integration.companyId, externalId: unified.externalId, platform: 'shopify' },
                     { ...unified, companyId: integration.companyId },
                     { upsert: true, new: true }
                 );
+
+                // Sync Variants
+                if (rawProd.variants && Array.isArray(rawProd.variants)) {
+                    for (const v of rawProd.variants) {
+                        await Variant.findOneAndUpdate(
+                            { companyId: integration.companyId, sku: v.sku || `${product.sku}-${v.id}` },
+                            {
+                                companyId: integration.companyId,
+                                productId: product._id,
+                                sku: v.sku || `${product.sku}-${v.id}`,
+                                price: parseFloat(v.price || 0),
+                                costPrice: 0,
+                                platformVariantId: v.id.toString(),
+                                options: {
+                                    size: v.option1,
+                                    color: v.option2,
+                                    material: v.option3
+                                }
+                            },
+                            { upsert: true }
+                        );
+                    }
+                }
+
                 results.synced++;
+
             } catch (err) {
                 if (err.code === 11000) results.duplicates++;
                 else results.errors++;

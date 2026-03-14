@@ -1,7 +1,9 @@
 import axios from 'axios';
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
+import Variant from '../models/Variant.js';
 import { transformOrder } from '../services/orderTransformer.js';
+
 import { transformProduct } from '../services/productTransformer.js';
 import { updateStockFromOrder } from '../services/stockService.js';
 
@@ -56,12 +58,27 @@ export const syncWooCommerceProducts = async (integration) => {
         for (const rawProd of products) {
             try {
                 const unified = transformProduct('woocommerce', rawProd);
-                await Product.findOneAndUpdate(
+                const product = await Product.findOneAndUpdate(
                     { companyId: integration.companyId, externalId: unified.externalId, platform: 'woocommerce' },
                     { ...unified, companyId: integration.companyId },
                     { upsert: true, new: true }
                 );
+
+                // Ensure at least one variant exists for the product
+                await Variant.findOneAndUpdate(
+                    { companyId: integration.companyId, sku: product.sku || `WC-${product.externalId}` },
+                    {
+                        companyId: integration.companyId,
+                        productId: product._id,
+                        sku: product.sku || `WC-${product.externalId}`,
+                        price: product.price,
+                        costPrice: 0,
+                    },
+                    { upsert: true }
+                );
+
                 results.synced++;
+
             } catch (err) {
                 results.errors++;
             }
