@@ -32,7 +32,7 @@ export default function PurchaseOrdersPage() {
                 fetch(`${API_BASE}/purchase-orders?companyId=${companyId}`),
                 fetch(`${API_BASE}/suppliers?companyId=${companyId}`),
                 fetch(`${API_BASE}/warehouses?companyId=${companyId}`),
-                fetch(`${API_BASE}/inventory?companyId=${companyId}`) // Fetching inventory to get variants
+                fetch(`${API_BASE}/variants?companyId=${companyId}`)
             ]);
 
             if (poRes.ok) setPurchaseOrders(await poRes.json());
@@ -42,10 +42,7 @@ export default function PurchaseOrdersPage() {
                 setWarehouses(whs);
                 if (whs.length > 0) setFormData(prev => ({ ...prev, warehouseId: whs[0]._id }));
             }
-            if (varRes.ok) {
-                const inv = await varRes.json();
-                setVariants(inv.map(i => i.variantId));
-            }
+            if (varRes.ok) setVariants(await varRes.json());
         } catch (error) {
             console.error("Error fetching PO data:", error);
         } finally {

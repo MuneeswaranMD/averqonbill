@@ -535,7 +535,8 @@ app.get('/api/warehouses', async (req, res) => {
 app.get('/api/inventory', async (req, res) => {
     const { companyId, warehouseId } = req.query;
     try {
-        const inventory = await Inventory.find({ warehouseId }).populate({
+        const query = warehouseId ? { warehouseId } : { companyId };
+        const inventory = await Inventory.find(query).populate({
             path: 'variantId',
             populate: { path: 'productId' }
         });
@@ -544,5 +545,18 @@ app.get('/api/inventory', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
+app.get('/api/variants', async (req, res) => {
+    const { companyId } = req.query;
+    try {
+        const products = await Product.find({ companyId });
+        const productIds = products.map(p => p._id);
+        const variants = await Variant.find({ productId: { $in: productIds } }).populate('productId');
+        res.json(variants);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
