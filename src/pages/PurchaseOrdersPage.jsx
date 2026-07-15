@@ -5,6 +5,7 @@ import {
     AlertCircle, ChevronRight, X, Calendar, Download, Save
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { API_BASE } from '../config/api';
 
 export default function PurchaseOrdersPage() {
     const { companyId } = useAuth();
@@ -22,17 +23,17 @@ export default function PurchaseOrdersPage() {
         items: [{ variantId: '', qty: 1, price: 0 }]
     });
 
-    const API_BASE = 'https://averqonbill-1.onrender.com/api';
+    const API_BASE_URL = API_BASE;
 
     const fetchData = async () => {
         if (!companyId) return;
         setLoading(true);
         try {
             const [poRes, supRes, whRes, varRes] = await Promise.all([
-                fetch(`${API_BASE}/purchase-orders?companyId=${companyId}`),
-                fetch(`${API_BASE}/suppliers?companyId=${companyId}`),
-                fetch(`${API_BASE}/warehouses?companyId=${companyId}`),
-                fetch(`${API_BASE}/variants?companyId=${companyId}`)
+                fetch(`${API_BASE_URL}/purchase-orders?companyId=${companyId}`),
+                fetch(`${API_BASE_URL}/suppliers?companyId=${companyId}`),
+                fetch(`${API_BASE_URL}/warehouses?companyId=${companyId}`),
+                fetch(`${API_BASE_URL}/variants?companyId=${companyId}`)
             ]);
 
             if (poRes.ok) setPurchaseOrders(await poRes.json());

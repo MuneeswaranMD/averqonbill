@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Search, Edit2, Trash2, Package, AlertCircle, X, Layers, RefreshCw } from 'lucide-react';
 import { FirestoreService } from '../lib/firestore';
 import { useAuth } from '../contexts/AuthContext';
+import { API_BASE } from '../config/api';
 import { Badge, Button } from '../components/ui';
 import { uploadImage } from '../lib/cloudinary';
 import { ImagePlus, Camera } from 'lucide-react';
@@ -175,7 +176,7 @@ export default function ProductsPage() {
             const firestoreProducts = await FirestoreService.getProducts(companyId);
             let backendProducts = [];
             try {
-                const resp = await fetch(`https://averqonbill-1.onrender.com/api/products/${companyId}`);
+                const resp = await fetch(`${API_BASE}/products/${companyId}`);
                 if (resp.ok) backendProducts = await resp.json();
             } catch (err) { console.warn('Backend products failed to load', err); }
 
@@ -201,7 +202,7 @@ export default function ProductsPage() {
             if (modal.item?.id) {
                 const isBackend = modal.item.platform;
                 if (isBackend) {
-                    const resp = await fetch(`https://averqonbill-1.onrender.com/api/products/${modal.item._id || modal.item.id}`, {
+                    const resp = await fetch(`${API_BASE}/products/${modal.item._id || modal.item.id}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ ...data, companyId })
@@ -224,7 +225,7 @@ export default function ProductsPage() {
         try {
             const isBackend = deleteModal.item.platform;
             if (isBackend) {
-                const resp = await fetch(`https://averqonbill-1.onrender.com/api/products/${deleteModal.item._id || deleteModal.item.id}`, {
+                const resp = await fetch(`${API_BASE}/products/${deleteModal.item._id || deleteModal.item.id}`, {
                     method: 'DELETE'
                 });
                 if (!resp.ok) throw new Error('Backend delete failed');

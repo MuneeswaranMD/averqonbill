@@ -25,15 +25,29 @@ import { receiveStock, adjustStock } from './services/stockService.js';
 
 dotenv.config();
 
-// Fix for Node.js + MongoDB Atlas SRV resolution on some Windows environments
+// Fix SRV DNS resolution on Windows (querySrv ECONNREFUSED)
+// Forces Node to use Google's public DNS which reliably resolves SRV records
+dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
 dns.setDefaultResultOrder('ipv4first');
 
-const app = express();
-app.use(cors({
+const corsOptions = {
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Shopify-Hmac-Sha256', 'X-WC-Webhook-Signature']
-}));
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Shopify-Hmac-Sha256', 'X-WC-Webhook-Signature'],
+  optionsSuccessStatus: 200
+};
+const app = express();
+
+// Ensure CORS headers are always present (even on crashes / cold-start errors)
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Shopify-Hmac-Sha256, X-WC-Webhook-Signature');
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  next();
+});
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Explicit preflight handler for all routes
 
 // Middleware to capture raw body for webhook verification
 app.use(express.json({
@@ -41,6 +55,7 @@ app.use(express.json({
     req.rawBody = buf;
   }
 }));
+
 
 // MongoDB Connection
 const MONGO_URI = process.env.MONGO_URI;
@@ -558,5 +573,16 @@ app.get('/api/variants', async (req, res) => {
     }
 });
 
+const server = app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+        console.error(`⚠️  Port ${PORT} is in use. Retrying in 1s...`);
+        setTimeout(() => {
+            server.close();
+            server.listen(PORT);
+        }, 1000);
+    } else {
+        throw err;
+    }
+});

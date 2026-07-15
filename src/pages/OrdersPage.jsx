@@ -11,6 +11,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { generateInvoicePDF } from '../utils/invoicePdf';
 import { AutomationService } from '../utils/automation';
 import { useCompanySettings } from '../hooks/useCompanySettings';
+import { API_BASE } from '../config/api';
 
 /* ── Constants ─────────────────────────────────────── */
 const ORDER_STATUSES = [
@@ -425,7 +426,7 @@ export default function OrdersPage() {
             const fsProducts = await FirestoreService.getProducts(companyId);
             let beProducts = [];
             try {
-                const resp = await fetch(`https://averqonbill-1.onrender.com/api/products/${companyId}`);
+                const resp = await fetch(`${API_BASE}/products/${companyId}`);
                 if (resp.ok) beProducts = await resp.json();
             } catch (e) { }
 
@@ -447,7 +448,7 @@ export default function OrdersPage() {
             const firestoreOrders = await FirestoreService.getOrders(companyId);
             let backendOrders = [];
             try {
-                const resp = await fetch(`https://averqonbill-1.onrender.com/api/orders/${companyId}`);
+                const resp = await fetch(`${API_BASE}/orders/${companyId}`);
                 if (resp.ok) backendOrders = await resp.json();
             } catch (err) { console.warn('Backend orders failed to load', err); }
 
@@ -479,7 +480,7 @@ export default function OrdersPage() {
             if (modal.item?.id) {
                 const isBackend = modal.item.platform || modal.item.source;
                 if (isBackend) {
-                    const resp = await fetch(`https://averqonbill-1.onrender.com/api/orders/${modal.item._id || modal.item.id}`, {
+                    const resp = await fetch(`${API_BASE}/orders/${modal.item._id || modal.item.id}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(data)
@@ -508,7 +509,7 @@ export default function OrdersPage() {
         try {
             const isBackend = order.platform || order.source;
             if (isBackend) {
-                const resp = await fetch(`https://averqonbill-1.onrender.com/api/orders/${order._id || id}`, { method: 'DELETE' });
+                const resp = await fetch(`${API_BASE}/orders/${order._id || id}`, { method: 'DELETE' });
                 if (!resp.ok) throw new Error('Backend delete failed');
             } else {
                 await FirestoreService.delete('orders', id);
@@ -525,7 +526,7 @@ export default function OrdersPage() {
 
             const isBackend = order.platform || order.source;
             if (isBackend) {
-                const resp = await fetch(`https://averqonbill-1.onrender.com/api/orders/${order._id || id}/update-status`, {
+                const resp = await fetch(`${API_BASE}/orders/${order._id || id}/update-status`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ status, companyId })
@@ -548,7 +549,7 @@ export default function OrdersPage() {
 
             const isBackend = order.platform || order.source;
             if (isBackend) {
-                const resp = await fetch(`https://averqonbill-1.onrender.com/api/orders/${order._id || id}`, {
+                const resp = await fetch(`${API_BASE}/orders/${order._id || id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ paymentStatus: payment })

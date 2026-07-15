@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
+import { API_BASE } from '../config/api';
 import {
     collection, query, where, onSnapshot,
     addDoc, updateDoc, deleteDoc, doc, serverTimestamp
@@ -29,7 +30,7 @@ export default function SuppliersPage() {
         category: ''
     });
 
-    const API_URL = 'https://averqonbill-1.onrender.com/api/suppliers';
+    const API_URL = `${API_BASE}/suppliers`;
 
     const fetchSuppliers = async () => {
         if (!companyId) return;

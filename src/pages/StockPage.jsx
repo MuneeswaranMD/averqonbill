@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { AutomationService } from '../utils/automation';
+import { API_BASE } from '../config/api';
 
 /* ─── Adjust Stock Modal ─────────────────────────────────── */
 function AdjustModal({ open, product, onClose, onAdjust, suppliers = [] }) {
@@ -221,7 +222,7 @@ export default function StockPage() {
             // 2. Fetch Backend products
             let backendProds = [];
             try {
-                const resp = await fetch(`https://averqonbill-1.onrender.com/api/products/${companyId}`);
+                const resp = await fetch(`${API_BASE}/products/${companyId}`);
                 if (resp.ok) {
                     const data = await resp.json();
                     backendProds = data.map(p => ({
@@ -268,7 +269,7 @@ export default function StockPage() {
             // If it's an integrated product, push to backend so it can sync to Shopify/WooCommerce
             if (p.platform) {
                 try {
-                    await fetch(`https://averqonbill-1.onrender.com/api/products/${p._id}/adjust-stock`, {
+                    await fetch(`${API_BASE}/products/${p._id}/adjust-stock`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ qty: newStock, companyId })

@@ -8,6 +8,7 @@ import { FirestoreService } from '../lib/firestore';
 import { useAuth } from '../contexts/AuthContext';
 import { generateInvoicePDF } from '../utils/invoicePdf';
 import { AutomationService } from '../utils/automation';
+import { API_BASE } from '../config/api';
 
 /* ── helpers ──────────────────────────────────────── */
 const fmt = (n) => Number(n || 0).toLocaleString('en-IN');
@@ -104,7 +105,7 @@ export default function POSPage() {
             // Also fetch from backend
             let beProducts = [];
             try {
-                const resp = await fetch(`https://averqonbill-1.onrender.com/api/products/${companyId}`);
+                const resp = await fetch(`${API_BASE}/products/${companyId}`);
                 if (resp.ok) beProducts = await resp.json();
             } catch (e) { }
 

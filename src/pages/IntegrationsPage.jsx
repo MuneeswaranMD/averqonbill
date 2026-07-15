@@ -9,11 +9,12 @@ import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { INTEGRATION_PLATFORMS } from '../config/integrations';
+import { API_BASE, WEBHOOK_BASE } from '../config/api';
 import * as Icons from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
-const API_BASE_URL = 'https://averqonbill-1.onrender.com/api';
-const WEBHOOK_BASE_URL = 'https://averqonbill-1.onrender.com/api/webhook';
+const API_BASE_URL = API_BASE;
+const WEBHOOK_BASE_URL = WEBHOOK_BASE;
 
 export default function IntegrationsPage() {
     const { companyId } = useAuth();
