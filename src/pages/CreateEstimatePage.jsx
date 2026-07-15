@@ -10,6 +10,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { generateInvoicePDF } from '../utils/invoicePdf';
 import { AutomationService } from '../utils/automation';
 import { useCompanySettings, getCurrencySymbol, buildDocNumber } from '../hooks/useCompanySettings';
+import { API_BASE } from '../config/api';
 
 /* ── helpers ──────────────────────────────── */
 const fmt = (n) => Number(n || 0).toLocaleString('en-IN');
@@ -81,7 +82,7 @@ export default function CreateEstimatePage() {
                 // Fetch from Backend (Website Products)
                 let backendProds = [];
                 try {
-                    const resp = await fetch(`https://averqonbill-1.onrender.com/api/products/${companyId}`);
+                    const resp = await fetch(`${API_BASE}/products/${companyId}`);
                     if (resp.ok) backendProds = await resp.json();
                 } catch (err) {
                     console.warn('Backend products failed to load for estimate', err);
